@@ -18,7 +18,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main_script.cpp">
+    <ClCompile Include="billiards_main_script.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

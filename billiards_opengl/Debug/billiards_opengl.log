@@ -1,2 +1,4 @@
-﻿  main_script.cpp
-  billiards_opengl.vcxproj -> C:\Users\170283u\Desktop\billiards_opengl\Debug\billiards_opengl.exe
+﻿  billiards_main_script.cpp
+c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(42): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
+c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(42): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
+  billiards_opengl.vcxproj -> C:\Users\170283u\Desktop\opengl\billiards_opengl\Debug\billiards_opengl.exe
