@@ -87,35 +87,33 @@ GLfloat shininess = 30.0;					//光沢の強さ
 /* 光 */
 GLfloat LIGHT_POSITION_0[] = { 0.0, 50.0, 50.0, 1.0 }; //光源0の座標
 
-static GLfloat floor_planar[4];
-static GLfloat floor_s = 50.0f;
-static GLfloat pM[16];
-static GLfloat lightpos[4] = { -30, -100, 50, 1 };
+static GLfloat floor_planar[4];			//床
+static GLfloat floor_s = 50.0f;			//床係数
+static GLfloat pM[16];					//shadowMatrix：m[]
 
-typedef struct _QUADS_VERTEX {
+typedef struct _QUADS_VERTEX {			//床構造体
 	GLfloat v0[3];
 	GLfloat v1[3];
 	GLfloat v2[3];
 	GLfloat v3[3];
 }QUADS_VERTEX;
-static QUADS_VERTEX floor_v = {
+static QUADS_VERTEX floor_v = {			//床構造体：floor_v
 	{ floor_s,  floor_s, -1.0f },
 	{ -floor_s,  floor_s, -1.0f },
 	{ -floor_s, -floor_s, -1.0f },
 	{ floor_s, -floor_s, -1.0f },
 };
 
-struct {
+struct {								//構造体：p 描画物体構造体
 	double x, y, z;
 	double vx, vy, vz;
 }p[100];
-int pn = 0;
-double ax = 0.0, ay = 0.0, az = -4.0;
-double vx = 5.0, vy = 5.0, vz = 20.0;
-double hanpatu = 0.9;
+int pn = 0;								//pnumber：新しく描画した物体番号
+double ax = 0.0, ay = 0.0, az = -4.0;	//addx,addy,addz：add force
+double vx = 5.0, vy = 5.0, vz = 20.0;	//vectorx,vectory,vectorz：物体移動の方向ベクトル
+double hanpatu = 0.9;					//床反発係数
 
-int tn = 0;
-double dt = 0.05;
+double dt = 0.05;						//物体加算変数
 
 //----------------------------------------------------
 // 関数プロトタイプ（後に呼び出す関数名と引数の宣言）
@@ -157,8 +155,8 @@ int main(int argc, char *argv[]) {
 	glutDisplayFunc(Display);										//描画時に呼び出される関数
 	glutReshapeFunc(Resize);										//リサイズ時に呼び出される関数
 	glutKeyboardFunc(Keyboard);										//キーボード入力時に呼び出される関数
-	//glutMouseFunc(MouseOn);											//マウスクリック時に呼び出される関数
-	//glutMotionFunc(MouseMotion);									//マウスドラッグ解除時に呼び出される関数
+	glutMouseFunc(MouseOn);											//マウスクリック時に呼び出される関数
+	glutMotionFunc(MouseMotion);									//マウスドラッグ解除時に呼び出される関数
 
 	glutIdleFunc(Idle);												//プログラムアイドル状態時に呼び出される関数
 	Initialize();													//初期設定の関数を呼び出す
@@ -196,16 +194,15 @@ void Initialize(void) {
 	/* 回転行列の初期化 */
 	Qrot(rt, cq);
 
-	//ステンシルバッファクリア値の設定--------------------------
+	/* ステンシルバッファクリア値の設定 */
 	glClearStencil(0);
 	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_AUTO_NORMAL);
 	glEnable(GL_NORMALIZE);
 
-	// 平面射影行列の算出--------------------------
-	shadowMatrix(pM, floor_planar, lightpos);
-	//--------------------------
+	/* 平面射影行列の算出 */
+	shadowMatrix(pM, floor_planar, LIGHT_POSITION_0);
 
 }
 
@@ -267,24 +264,27 @@ void Display(void) {
 //----------------------------------------------------
 void DrawStructure(bool flag) {
 	for (int i = 1; i <= pn; i++) {
-		p[i].vx += ax * dt;
-		p[i].vy += ay * dt;
-		p[i].vz += az * dt;
-		p[i].x += p[i].vx * dt;
-		p[i].y += p[i].vy * dt;
-		p[i].z += p[i].vz * dt;
+		p[i].vx += ax * dt;				//vector = vector + add * dt
+		p[i].vy += ay * dt;				//vector = vector + add * dt
+		p[i].vz += az * dt;				//vector = vector + add * dt
+		p[i].x += p[i].vx * dt;			//position = vector * dt
+		p[i].y += p[i].vy * dt;			//position = vector * dt
+		p[i].z += p[i].vz * dt;			//position = vector * dt
 		if (p[i].z < 4 && abs(p[i].x) < floor_s  && abs(p[i].y) < floor_s) {
-			p[i].z = 4.0;
-			p[i].vz = -hanpatu * p[i].vz;
+		//z < 4(球体半径?)
+		//|x| < floorのx両端
+		//|y| < floorのy両端  //床上で床を抜ける場合
+			p[i].z = 4.0;					//zを床上に乗る位置に更新
+			p[i].vz = -hanpatu * p[i].vz;	//vector = -反発係数 * vector  //床による反発によるベクトル更新
 		}
-		if (!flag || p[i].z >0) {
+		if (!flag || p[i].z >0) {			//display or z > 0
 			glPushMatrix();
 			glMaterialfv(GL_FRONT, GL_AMBIENT, ms_ruby.ambient);
 			glMaterialfv(GL_FRONT, GL_DIFFUSE, ms_ruby.diffuse);
 			glMaterialfv(GL_FRONT, GL_SPECULAR, ms_ruby.specular);
 			glMaterialfv(GL_FRONT, GL_SHININESS, &ms_ruby.shininess);
-			glTranslated(p[i].x, p[i].y, p[i].z);//平行移動値の設定
-			glutSolidSphere(4.0, 20, 20);//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
+			glTranslated(p[i].x, p[i].y, p[i].z);	//平行移動値の設定
+			glutSolidSphere(4.0, 20, 20);			//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
 			glPopMatrix();
 		}
 	}
@@ -298,7 +298,7 @@ void Sphere(void) {
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, ms_ruby.diffuse);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, ms_ruby.specular);
 	glMaterialfv(GL_FRONT, GL_SHININESS, &ms_ruby.shininess);
-	glTranslated(0.0, 10.0, 20.0);	//平行移動値の設定
+	glTranslated(0.0, 5.0, 5.0);	//平行移動値の設定
 	glutSolidSphere(4.0, 20, 20);	//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
 	glPopMatrix();
 }
@@ -352,36 +352,40 @@ void Ground(void) {
 	glEnd();
 }
 //----------------------------------------------------
-// 床平面の方程式と行列の計算
+// 床平面の方程式
 //----------------------------------------------------
 void findPlane(
-	GLfloat plane[4],  // 作成する平面方程式の係数
-	GLfloat v0[3],    // 頂点１
-	GLfloat v1[3],    // 頂点２
-	GLfloat v2[3])    // 頂点３
+	GLfloat plane[4],	// 作成する平面方程式の係数
+	GLfloat v0[3],		// 頂点１
+	GLfloat v1[3],		// 頂点２
+	GLfloat v2[3])		// 頂点３
 {
 	GLfloat vec0[3], vec1[3];
 
 	// Need 2 vectors to find cross product.
-	vec0[0] = v1[0] - v0[0];
-	vec0[1] = v1[1] - v0[1];
-	vec0[2] = v1[2] - v0[2];
+	vec0[0] = v1[0] - v0[0];			//x：vector0 = 頂点2 - 頂点1
+	vec0[1] = v1[1] - v0[1];			//y：vector0 = 頂点2 - 頂点1
+	vec0[2] = v1[2] - v0[2];			//z：vector0 = 頂点2 - 頂点1
 
-	vec1[0] = v2[0] - v0[0];
-	vec1[1] = v2[1] - v0[1];
-	vec1[2] = v2[2] - v0[2];
+	vec1[0] = v2[0] - v0[0];			//x：vector1 = 頂点3 - 頂点1
+	vec1[1] = v2[1] - v0[1];			//y：vector1 = 頂点3 - 頂点1
+	vec1[2] = v2[2] - v0[2];			//z：vector1 = 頂点3 - 頂点1
 
 	// find cross product to get A, B, and C of plane equation
-	plane[0] = vec0[1] * vec1[2] - vec0[2] * vec1[1];
-	plane[1] = -(vec0[0] * vec1[2] - vec0[2] * vec1[0]);
-	plane[2] = vec0[0] * vec1[1] - vec0[1] * vec1[0];
+	plane[0] =	 vec0[1] * vec1[2] - vec0[2] * vec1[1];		//  vector0.y * vector1.z - vector0.z * vector1.y
+	plane[1] = -(vec0[0] * vec1[2] - vec0[2] * vec1[0]);	//-(vector0.x * vector1.z - vector0.z * vector1.x)
+	plane[2] =   vec0[0] * vec1[1] - vec0[1] * vec1[0];		//  vector0.x * vector1.y - vector0.y * vector1.x
 
-	plane[3] = -(plane[0] * v0[0] + plane[1] * v0[1] + plane[2] * v0[2]);
+	plane[3] = -(plane[0] * v0[0] + plane[1] * v0[1] + plane[2] * v0[2]);	//ベクトル演算
 }
+
+//----------------------------------------------------
+// 行列の計算
+//----------------------------------------------------
 void shadowMatrix(
-	GLfloat *m,      // 作成する行列のポインタ
-	GLfloat plane[4],  // 射影する表面の平面方程式の係数
-	GLfloat light[4])  // 光源の同時座標値
+	GLfloat *m,			// 作成する行列のポインタ
+	GLfloat plane[4],	// 射影する表面の平面方程式の係数
+	GLfloat light[4])	// 光源の同時座標値
 {
 	GLfloat dot;
 
@@ -413,7 +417,7 @@ void shadowMatrix(
 }
 
 //----------------------------------------------------
-// 床の描画と影の描画
+// 床の描画
 //----------------------------------------------------
 void DrawFloor(bool bTexture) {
 	if (bTexture) {
@@ -444,47 +448,50 @@ void DrawFloor(bool bTexture) {
 		glEnable(GL_LIGHTING);
 	}
 }
+
+//----------------------------------------------------
+// 影の描画
+//----------------------------------------------------
 void DrawShadow(void) {
-	/////////////////////////////////////////////
-	//床のステンシルを付ける
+	/* 床のステンシルを付ける */
 	glEnable(GL_STENCIL_TEST);
 	glStencilFunc(GL_ALWAYS, 1, ~0);
-	//これから描画するもののステンシル値にすべて１タグをつける
-	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-	glColor4f(0.7f, 0.4f, 0.0f, 1.0f);
-	DrawFloor(true);//床の描画
 
-					/////////////////////////////////////////////
-					//カラー・デプスバッファマスクをセットする
-					//これで以下の内容のピクセルの色の値は、書き込まれない。
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);	//これから描画するもののステンシル値にすべて１タグをつける
+	//(GL_REPLACE：flStencilFunc()第二引数に置き換え)
+	glColor4f(0.7f, 0.4f, 0.0f, 1.0f);
+	DrawFloor(true);							//床の描画
+
+	/* カラー・デプスバッファマスクをセットする
+	 * これで以下の内容のピクセルの色の値は、書き込まれない。*/
 	glColorMask(0, 0, 0, 0);
 	glDepthMask(0);
-	/////////////////////////////////////////////
-	//床にオブジェクトの影のステンシルを付ける
+
+	/* 床にオブジェクトの影のステンシルを付ける */
 	glEnable(GL_STENCIL_TEST);
 	glStencilFunc(GL_EQUAL, 1, ~0);
-	//これから描画するもののステンシル値にすべて１タグをつける
-	glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
+
+	glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);		//これから描画するもののステンシル値にすべて１タグをつける
+	//(GL_INCR：ステンシル値を+1 < max)
 	glDisable(GL_DEPTH_TEST);
 	glPushMatrix();
-	glMultMatrixf(pM);
+	glMultMatrixf(pM);							//現在の行列にpM(shadowMatrix)を掛ける
 	DrawStructure(true);
+	Sphere();
 	glPopMatrix();
 	glEnable(GL_DEPTH_TEST);
 
-	/////////////////////////////////////////////
-	//ビットマスクを解除
+	/* ビットマスクを解除 */
 	glColorMask(1, 1, 1, 1);
 	glDepthMask(1);
 
-	/////////////////////////////////////////////
-	//影をつける
+	/* 影をつける */
 	glStencilFunc(GL_EQUAL, 2, ~0);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);									//混合処理
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);	//アルファブレンド
 	glColor4f(0.1f, 0.1f, 0.1f, 0.5f);
 	glDisable(GL_DEPTH_TEST);
-	DrawFloor(false);//床の描画
+	DrawFloor(false);									//床の描画
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 	glDisable(GL_STENCIL_TEST);
