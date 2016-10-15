@@ -85,7 +85,7 @@ GLfloat white[]   = { 1.0, 1.0, 1.0, 1.0 };	//”’F
 GLfloat shininess = 30.0;					//Œõ‘ò‚Ì‹­‚³
 
 /* Œõ */
-GLfloat LIGHT_POSITION_0[] = { 0.0, 50.0, 50.0, 1.0 }; //ŒõŒ¹0‚ÌÀ•W
+GLfloat LIGHT_POSITION_0[] = { 0.0, 50.0, 150.0, 1.0 }; //ŒõŒ¹0‚ÌÀ•W
 
 static GLfloat floor_planar[4];			//°
 static GLfloat floor_s = 50.0f;			//°ŒW”
