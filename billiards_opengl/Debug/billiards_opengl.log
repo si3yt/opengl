@@ -1,14 +1,14 @@
 ﻿  billiards_main_script.cpp
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(72): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(72): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(77): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(77): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(80): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(80): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(81): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(81): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(82): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(82): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(83): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(83): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
+c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(43): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
+c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(43): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
+c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(48): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
+c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(48): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
+c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(51): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
+c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(51): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
+c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(52): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
+c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(52): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
+c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(53): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
+c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(53): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
+c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(54): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
+c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(54): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
   billiards_opengl.vcxproj -> C:\Users\170283u\Desktop\opengl\billiards_opengl\Debug\billiards_opengl.exe

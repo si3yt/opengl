@@ -29,35 +29,6 @@ float camera_z_pos = 50.0;
 /* ディスプレイリスト */
 unsigned int listNumber;
 
-
-/* 直方体 */
-GLdouble vertex[][3] = {	// 頂点
-	{ 0.0, 0.0, 0.0 },
-	{ 2.0, 0.0, 0.0 },
-	{ 2.0, 2.0, 0.0 },
-	{ 0.0, 2.0, 0.0 },
-	{ 0.0, 0.0, 30.0 },
-	{ 2.0, 0.0, 30.0 },
-	{ 2.0, 2.0, 30.0 },
-	{ 0.0, 2.0, 30.0 }
-};
-int face[][4] = {			// 面(頂点の順番)
-	{ 0, 1, 2, 3 },
-	{ 1, 5, 6, 2 },
-	{ 5, 4, 7, 6 },
-	{ 4, 0, 3, 7 },
-	{ 4, 5, 1, 0 },
-	{ 3, 2, 6, 7 }
-};
-GLdouble normal[][3] = {	// 面の法線ベクトル
-	{ 0.0, 0.0,-1.0 },
-	{ 1.0, 0.0, 0.0 },
-	{ 0.0, 0.0, 1.0 },
-	{ -1.0, 0.0, 0.0 },
-	{ 0.0,-1.0, 0.0 },
-	{ 0.0, 1.0, 0.0 }
-};
-
 /* 物質質感(山本昌志氏の構造体を利用) */
 struct MaterialStruct {							// material用構造体
 	GLfloat ambient[4];		// 環境反射
@@ -82,27 +53,133 @@ GLfloat green[]   = { 0.2, 0.8, 0.2, 1.0 };	//緑色
 GLfloat blue[]    = { 0.2, 0.2, 0.8, 1.0 };	//青色
 GLfloat yellow[]  = { 0.8, 0.8, 0.2, 1.0 };	//黄色
 GLfloat white[]   = { 1.0, 1.0, 1.0, 1.0 };	//白色
+GLfloat black[]   = { 0.0, 0.0, 0.0, 1.0 };	//黒色
 GLfloat shininess = 30.0;					//光沢の強さ
 
 /* 光 */
-GLfloat LIGHT_POSITION_0[] = { 0.0, 50.0, 150.0, 1.0 }; //光源0の座標
+GLfloat LIGHT_POSITION_0[] = { 0.0, 0.0, 150.0, 1.0 }; //光源0の座標
 
 static GLfloat floor_planar[4];			//床
 static GLfloat floor_s = 50.0f;			//床係数
+static GLfloat wall_s = 10.0f;			//壁の高さ
 static GLfloat pM[16];					//shadowMatrix：m[]
 
-typedef struct _QUADS_VERTEX {			//床構造体
+static GLfloat floor_offset = 10;
+
+/* 床 */
+typedef struct _QUADS_VERTEX {
 	GLfloat v0[3];
 	GLfloat v1[3];
 	GLfloat v2[3];
 	GLfloat v3[3];
 }QUADS_VERTEX;
-static QUADS_VERTEX floor_v = {			//床構造体：floor_v
-	{ floor_s,  floor_s, -1.0f },
-	{ -floor_s,  floor_s, -1.0f },
-	{ -floor_s, -floor_s, -1.0f },
-	{ floor_s, -floor_s, -1.0f },
+static QUADS_VERTEX floor_v = {
+	{ floor_s,  floor_s, 0.0f },
+	{ -floor_s,  floor_s, 0.0f },
+	{ -floor_s, -floor_s, 0.0f },
+	{ floor_s, -floor_s, 0.0f },
 };
+
+GLdouble floor_vertex[][3] = {
+	{ floor_s  -floor_offset, floor_s*2,				0.0f },
+	{ -floor_s +floor_offset, floor_s*2,				0.0f },
+	{ -floor_s +floor_offset, floor_s*2  -floor_offset, 0.0f },
+	{ -floor_s,				  floor_s*2  -floor_offset, 0.0f },
+	{ -floor_s,				  -floor_s*2 +floor_offset, 0.0f },
+	{ -floor_s +floor_offset, -floor_s*2 +floor_offset, 0.0f },
+	{ -floor_s +floor_offset, -floor_s*2,				0.0f },
+	{ floor_s  -floor_offset, -floor_s*2,				0.0f },
+	{ floor_s  -floor_offset, -floor_s*2 +floor_offset, 0.0f },
+	{ floor_s,				  -floor_s*2 +floor_offset, 0.0f },
+	{ floor_s,				  floor_s*2  -floor_offset, 0.0f },
+	{ floor_s  -floor_offset, floor_s*2  -floor_offset, 0.0f },
+};
+
+int floor_face[][4] = {
+	{0,  1,  6,  7},
+	{2,  3,  4,  5},
+	{10, 11, 8,  9}
+};
+
+/* 穴 */
+GLdouble hole_vertex[][3] = {
+	{ -floor_s, -floor_s*2, -wall_s   },
+	{ floor_s,  -floor_s*2, -wall_s   },
+	{ floor_s,  floor_s*2,  -wall_s   },
+	{ -floor_s, floor_s*2,  -wall_s   },
+	{ -floor_s, -floor_s*2, -wall_s/2 },
+	{ floor_s,  -floor_s*2, -wall_s/2 },
+	{ floor_s,  floor_s*2,  -wall_s/2 },
+	{ -floor_s, floor_s*2,  -wall_s/2 },
+};
+
+/* 壁 */
+GLdouble vertex_top[][3] = {	// 頂点
+	{ -floor_s,  floor_s*2,		    -wall_s },
+	{ floor_s,   floor_s*2,		    -wall_s },
+	{ floor_s,   floor_s*2 +wall_s, -wall_s },
+	{ -floor_s,  floor_s*2 +wall_s, -wall_s },
+	{ -floor_s,  floor_s*2,		    wall_s  },
+	{ floor_s,   floor_s*2,		    wall_s  },
+	{ floor_s,   floor_s*2 +wall_s, wall_s  },
+	{ -floor_s,  floor_s*2 +wall_s, wall_s  },
+};
+GLdouble vertex_bottom[][3] = {	// 頂点
+	{ -floor_s,  -floor_s*2 -wall_s, -wall_s },
+	{ floor_s,   -floor_s*2 -wall_s, -wall_s },
+	{ floor_s,   -floor_s*2,		 -wall_s },
+	{ -floor_s,  -floor_s*2,		 -wall_s },
+	{ -floor_s,  -floor_s*2 -wall_s, wall_s  },
+	{ floor_s,   -floor_s*2 -wall_s, wall_s  },
+	{ floor_s,   -floor_s*2,		 wall_s  },
+	{ -floor_s,  -floor_s*2,		 wall_s  },
+};
+GLdouble vertex_left[][3] = {	// 頂点
+	{ -floor_s -wall_s,	-floor_s*2 -wall_s,	-wall_s },
+	{ -floor_s,			-floor_s*2 -wall_s,	-wall_s },
+	{ -floor_s,         floor_s*2  +wall_s, -wall_s },
+	{ -floor_s -wall_s, floor_s*2  +wall_s, -wall_s },
+	{ -floor_s -wall_s,	-floor_s*2 -wall_s,	wall_s  },
+	{ -floor_s,			-floor_s*2 -wall_s,	wall_s  },
+	{ -floor_s,		    floor_s*2  +wall_s, wall_s  },
+	{ -floor_s -wall_s, floor_s*2  +wall_s, wall_s  },
+};
+GLdouble vertex_right[][3] = {	// 頂点
+	{ floor_s,		   -floor_s*2 -wall_s, -wall_s },
+	{ floor_s +wall_s, -floor_s*2 -wall_s, -wall_s },
+	{ floor_s +wall_s, floor_s*2  +wall_s, -wall_s },
+	{ floor_s,		   floor_s*2  +wall_s, -wall_s },
+	{ floor_s,		   -floor_s*2 -wall_s, wall_s  },
+	{ floor_s +wall_s, -floor_s*2  -wall_s, wall_s  },
+	{ floor_s +wall_s, floor_s*2  +wall_s, wall_s  },
+	{ floor_s,		   floor_s*2  +wall_s, wall_s  },
+};
+int face[][4] = {			// 面(頂点の順番)
+	{ 0, 1, 2, 3 },
+	{ 1, 5, 6, 2 },
+	{ 5, 4, 7, 6 },
+	{ 4, 0, 3, 7 },
+	{ 4, 5, 1, 0 },
+	{ 3, 2, 6, 7 }
+};
+typedef struct _FACE_NORMAL {
+	GLfloat n0[3];
+	GLfloat n1[3];
+	GLfloat n2[3];
+	GLfloat n3[3];
+	GLfloat n4[3];
+	GLfloat n5[3];
+}FACE_NORMAL;
+static FACE_NORMAL face_normal = {		//面の法線ベクトル
+	{ 0.0,  0.0,  -1.0 },
+	{ 1.0,  0.0,  0.0  },
+	{ 0.0,  0.0,  1.0  },
+	{ -1.0, 0.0,  0.0  },
+	{ 0.0,  -1.0, 0.0  },
+	{ 0.0,  1.0,  0.0  }
+};
+
+
 
 struct {								//構造体：p 描画物体構造体
 	double x, y, z;
@@ -115,6 +192,12 @@ double hanpatu = 0.9;					//床反発係数
 
 double dt = 0.05;						//物体加算変数
 
+double sphere_radius = 4.0;				//球の半径
+double sphere_number = 100;				//球の個数
+
+bool key_space = false;
+double add_force = 0.0;
+
 //----------------------------------------------------
 // 関数プロトタイプ（後に呼び出す関数名と引数の宣言）
 //----------------------------------------------------
@@ -122,15 +205,17 @@ void Initialize(void);
 void Idle(void);
 void Display(void);
 void Resize(int w, int h);
-void Ground(void);
+
+int Collision(int n);
+void WallCollistion(int n);
 
 void Sphere(void);
-void Cube(void);
-void Rectangular(void);
+void Wall(void);
+void Hole(void);
 
 void findPlane(GLfloat plane[4], GLfloat v0[3], GLfloat v1[3], GLfloat v2[3]);
 void shadowMatrix(GLfloat *m, GLfloat plane[4], GLfloat light[4]);
-void DrawFloor(bool bTexture);
+void DrawTable(bool bTexture);
 void DrawShadow(void);
 void DrawStructure(bool);
 
@@ -138,6 +223,7 @@ void Qmul(double r[], const double p[], const double q[]);
 void Qrot(double r[], double q[]);
 
 void Keyboard(unsigned char key, int x, int y);
+void KeyboardUp(unsigned char key, int x, int y);
 void MouseMotion(int x, int y);
 void MouseOn(int button, int state, int x, int y);
 void MouseWheel(float z);
@@ -155,6 +241,8 @@ int main(int argc, char *argv[]) {
 	glutDisplayFunc(Display);										//描画時に呼び出される関数
 	glutReshapeFunc(Resize);										//リサイズ時に呼び出される関数
 	glutKeyboardFunc(Keyboard);										//キーボード入力時に呼び出される関数
+	glutKeyboardUpFunc(KeyboardUp);
+	glutIgnoreKeyRepeat(GL_TRUE);									//キーの繰り返し入力は無視
 	glutMouseFunc(MouseOn);											//マウスクリック時に呼び出される関数
 	glutMotionFunc(MouseMotion);									//マウスドラッグ解除時に呼び出される関数
 
@@ -211,6 +299,12 @@ void Initialize(void) {
 //----------------------------------------------------
 void Idle() {
 	glutPostRedisplay(); //glutDisplayFunc()を１回実行する
+
+	if (key_space) {
+		if (add_force <= 3500) {
+			add_force += 15;
+		}
+	}
 }
 
 //----------------------------------------------------
@@ -240,7 +334,7 @@ void Display(void) {
 
 	/* 視点の設定 */
 	gluLookAt(
-		0.0, -160.0, 40.0,	//視点の位置x,y,z;
+		0.0, -300.0, 200.0,	//視点の位置x,y,z;
 		0.0, 0.0, 0.0,	//視界の中心位置の参照点座標x,y,z
 		0.0, 0.0, 1.0);		//視界の上方向のベクトルx,y,z
 
@@ -249,9 +343,6 @@ void Display(void) {
 
 	/* 図形の描画 */
 	Sphere();		//球
-	Cube();			//立方体
-	Rectangular();	//直方体
-	Ground();		//大地
 
 	DrawStructure(false);
 	DrawShadow();
@@ -284,73 +375,117 @@ void DrawStructure(bool flag) {
 			glMaterialfv(GL_FRONT, GL_SPECULAR, ms_ruby.specular);
 			glMaterialfv(GL_FRONT, GL_SHININESS, &ms_ruby.shininess);
 			glTranslated(p[i].x, p[i].y, p[i].z);	//平行移動値の設定
-			glutSolidSphere(4.0, 20, 20);			//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
+			glutSolidSphere(sphere_radius, 20, 20);			//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
 			glPopMatrix();
 		}
 	}
 }
+
+int Collision(int n) {
+	for (size_t i = n; i < sphere_number; i++) {
+		if (i == n){}
+		else {
+			if (abs((p[n].x-p[i].x) + (p[n].y-p[i].y) + (p[n].z-p[i].z)) <= sphere_radius*sphere_radius) {
+				return i;
+			}
+		}
+	}
+	return -1;
+}
+
+void WallCollistion(int n) {
+	if (abs(p[n].y) > floor_s * 2 - sphere_radius) {
+		double a = -(1.0) * p[n].vy;
+		p[n].vy = 2 * a*(1.0) + p[n].vy;
+	}
+	if (abs(p[n].x) > floor_s - sphere_radius) {
+		double a = -(1.0) * p[n].vx;
+		p[n].vx = 2 * a*(1.0) + p[n].vx;
+	}
+}
 //----------------------------------------------------
 // 球
-//----------------------------------------------------
+//---------------------------------------------------
+double sphere_y = 0.0;
+double sphere_vy = 0.0;
+double force = 0.0;
 void Sphere(void) {
+	int n = 1;
+	p[n].vy += force * dt;
+	p[n].y += p[n].vy * 0.01;
+	if (p[n].vy < 0) { force = 2.0; }	//座標軸をまたぐときの符号変換
+	else if(p[n].vy > 0){ force = -2.0; }
+	if (abs(p[n].vy) < 0.01) {	//失速による停止
+		p[n].vy = 0.0;
+		force = 0;
+	}
+	WallCollistion(n);
 	glPushMatrix();
 	glMaterialfv(GL_FRONT, GL_AMBIENT, ms_ruby.ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, ms_ruby.diffuse);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, ms_ruby.specular);
 	glMaterialfv(GL_FRONT, GL_SHININESS, &ms_ruby.shininess);
-	glTranslated(0.0, 5.0, 5.0);	//平行移動値の設定
-	glutSolidSphere(4.0, 20, 20);	//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
-	glPopMatrix();
-}
-//----------------------------------------------------
-// 立方体
-//----------------------------------------------------
-void Cube(void) {
-	glPushMatrix();
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, green);
-	glTranslated(-20.0, 0.0, 20.0);	//平行移動値の設定
-	glutSolidCube(10.0);			//引数：(一辺の長さ)
+	glTranslated(0.0, p[n].y, sphere_radius);	//平行移動値の設定
+	glutSolidSphere(sphere_radius, 20, 20);	//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
 	glPopMatrix();
 }
 
+
+
 //----------------------------------------------------
-// 直方体
+// 壁(直方体)
 //----------------------------------------------------
-void Rectangular(void) {
+void Wall(void) {
 	glPushMatrix();
-	glMaterialfv(GL_FRONT, GL_AMBIENT, ms_jade.ambient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, ms_jade.diffuse);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, ms_jade.specular);
-	glMaterialfv(GL_FRONT, GL_SHININESS, &ms_jade.shininess);
-	glTranslated(30.0, 50.0, 0.0);	//平行移動値の設定
+	glDisable(GL_LIGHTING);
 	glBegin(GL_QUADS);							//GL_QUADS：4点組の四角形
+	glColor4fv(red);
 	for (int j = 0; j < 6; ++j) {
-		glNormal3dv(normal[j]);					//法線ベクトルの指定
 		for (int i = 0; i < 4; ++i) {
-			glVertex3dv(vertex[face[j][i]]);
+			glVertex3dv(vertex_top[face[j][i]]);
 		}
 	}
 	glEnd();
+	glBegin(GL_QUADS);							//GL_QUADS：4点組の四角形
+	for (int j = 0; j < 6; ++j) {
+		for (int i = 0; i < 4; ++i) {
+			glVertex3dv(vertex_bottom[face[j][i]]);
+		}
+	}
+	glEnd();
+	glBegin(GL_QUADS);							//GL_QUADS：4点組の四角形
+	for (int j = 0; j < 6; ++j) {
+		for (int i = 0; i < 4; ++i) {
+			glVertex3dv(vertex_left[face[j][i]]);
+		}
+	}
+	glEnd();
+	glBegin(GL_QUADS);							//GL_QUADS：4点組の四角形
+	for (int j = 0; j < 6; ++j) {
+		for (int i = 0; i < 4; ++i) {
+			glVertex3dv(vertex_right[face[j][i]]);
+		}
+	}
+	glEnd();
+	glEnable(GL_LIGHTING);
 	glPopMatrix();
 }
 //----------------------------------------------------
-// 大地の描画
+// 穴の描画
 //----------------------------------------------------
-void Ground(void) {
-	double ground_max_x = 300.0;
-	double ground_max_y = 300.0;
-	glColor3d(0.8, 0.8, 0.8);  // 大地の色
-	glBegin(GL_LINES);
-	for (double ly = -ground_max_y; ly <= ground_max_y; ly += 10.0) {
-		glVertex3d(-ground_max_x, ly, 0);
-		glVertex3d(ground_max_x, ly, 0);
-	}
-	for (double lx = -ground_max_x; lx <= ground_max_x; lx += 10.0) {
-		glVertex3d(lx, ground_max_y, 0);
-		glVertex3d(lx, -ground_max_y, 0);
+void Hole(void) {
+	glDisable(GL_LIGHTING);
+	glColor4fv(black);
+	glBegin(GL_QUADS);
+	for (int j = 0; j < 6; ++j) {
+		for (int i = 0; i < 4; ++i) {
+			glVertex3dv(hole_vertex[face[j][i]]);
+		}
 	}
 	glEnd();
+	glEnable(GL_LIGHTING);
 }
+
 //----------------------------------------------------
 // 床平面の方程式
 //----------------------------------------------------
@@ -419,34 +554,20 @@ void shadowMatrix(
 //----------------------------------------------------
 // 床の描画
 //----------------------------------------------------
-void DrawFloor(bool bTexture) {
-	if (bTexture) {
-		// 床にテクスチャを使う時はココで設定する
-		//  glBindTexture( GL_TEXTURE_2D, );
-
+void DrawTable(bool bTexture) {
+	if (!bTexture) {
 		glDisable(GL_LIGHTING);
 		glBegin(GL_QUADS);
-		//    glTexCoord2f( , );
-		glVertex3fv(floor_v.v0);
-		//    glTexCoord2f( , );
-		glVertex3fv(floor_v.v1);
-		//    glTexCoord2f( , );
-		glVertex3fv(floor_v.v2);
-		//    glTexCoord2f( , );
-		glVertex3fv(floor_v.v3);
+		for (int j = 0; j < 3; ++j) {
+			for (int i = 0; i < 4; ++i) {
+				glVertex3dv(floor_vertex[floor_face[j][i]]);
+			}
+		}
 		glEnd();
 		glEnable(GL_LIGHTING);
 	}
-	else {
-		glDisable(GL_LIGHTING);
-		glBegin(GL_QUADS);
-		glVertex3fv(floor_v.v0);
-		glVertex3fv(floor_v.v1);
-		glVertex3fv(floor_v.v2);
-		glVertex3fv(floor_v.v3);
-		glEnd();
-		glEnable(GL_LIGHTING);
-	}
+	Wall();
+	Hole();
 }
 
 //----------------------------------------------------
@@ -459,8 +580,8 @@ void DrawShadow(void) {
 
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);	//これから描画するもののステンシル値にすべて１タグをつける
 	//(GL_REPLACE：flStencilFunc()第二引数に置き換え)
-	glColor4f(0.7f, 0.4f, 0.0f, 1.0f);
-	DrawFloor(true);							//床の描画
+	glColor4fv(green);
+	DrawTable(false);							//床の描画
 
 	/* カラー・デプスバッファマスクをセットする
 	 * これで以下の内容のピクセルの色の値は、書き込まれない。*/
@@ -491,7 +612,7 @@ void DrawShadow(void) {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);	//アルファブレンド
 	glColor4f(0.1f, 0.1f, 0.1f, 0.5f);
 	glDisable(GL_DEPTH_TEST);
-	DrawFloor(false);									//床の描画
+	DrawTable(false);									//床の描画
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 	glDisable(GL_STENCIL_TEST);
@@ -511,10 +632,23 @@ void Keyboard(unsigned char key, int x, int y) {
 		p[pn].vy = vy * ((double)rand() / (double)RAND_MAX - (double)rand() / (double)RAND_MAX);
 		p[pn].vz = vz * ((double)rand() / (double)RAND_MAX);
 		break;
+	case '\040':	//SP
+		key_space = true;
+		break;
 	case '\033':	//ESCのASCIIコード
 		exit(0);
 		break;
 	default:
+		break;
+	}
+}
+
+void KeyboardUp(unsigned char key, int x, int y) {
+	switch (key) {
+	case '\040':	//SP
+		key_space = false;
+		force = add_force;
+		add_force = 0.0;
 		break;
 	}
 }
