@@ -1,3 +1,4 @@
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include <fstream>
 #include <sstream>
@@ -11,150 +12,150 @@ using namespace std;
 // 変数宣言
 //----------------------------------------------------
 /* ウィンドウ変数 */
-int  WINDOW_POSITION_X = 100; 
-int  WINDOW_POSITION_Y = 100;
-int  WINDOW_WIDTH = 512;
-int  WINDOW_HEIGHT = 512; 
-char WINDOW_TITLE[] = "billiards";
+static int  _WINDOW_POSITION_X = 100; 
+static int  _WINDOW_POSITION_Y = 100;
+static int  _WINDOW_WIDTH      = 512;
+static int  _WINDOW_HEIGHT     = 512; 
+static char _WINDOW_TITLE[]    = "billiards";
 
 /* マウス回転 */
 #define SCALE (2.0 * 3.14159265358979323846)	// マウスの相対位置→回転角の換算係数
-int cx, cy;										// ドラッグ開始位置
+int    cx, cy;									// ドラッグ開始位置
 double sx, sy;									// マウスの絶対位置→ウィンドウ内での相対位置の換算係数
 double cq[4] = { 1.0, 0.0, 0.0, 0.0 };			// 回転の初期値 (クォータニオン)
 double tq[4];									// ドラッグ中の回転 (クォータニオン)
 double rt[16];									// 回転の変換行列
-float camera_z_pos = 50.0;
+float  camera_z_pos = 50.0;
 
 /* ディスプレイリスト */
-unsigned int listNumber;
+GLuint list_number;
 
 /* 物質質感(山本昌志氏の構造体を利用) */
-struct MaterialStruct {							// material用構造体
+struct _MATERIAL_STRUCT {							// material用構造体
 	GLfloat ambient[4];		// 環境反射
 	GLfloat diffuse[4];		// 拡散反射
 	GLfloat specular[4];	// 鏡面反射
 	GLfloat shininess;		// 光沢
 };
-MaterialStruct ms_jade = {						// jade(翡翠)
-	{ 0.135,     0.2225,   0.1575,   1.0 },
-	{ 0.54,      0.89,     0.63,     1.0 },
-	{ 0.316228,  0.316228, 0.316228, 1.0 },
-	12.8 };
-MaterialStruct ms_ruby = {						// ruby(ルビー)
+_MATERIAL_STRUCT _MS_WHITE_PLASTIC = {				//プラスチック(白)
+	{ 0.0,  0.0,  0.0,  1.0 },
+	{ 0.55, 0.55, 0.55, 1.0 },
+	{ 0.70, 0.70, 0.70, 1.0 },
+	32 };
+_MATERIAL_STRUCT _MS_RUBY = {						// ruby(ルビー)
 	{ 0.1745,   0.01175,  0.01175,   1.0 },
 	{ 0.61424,  0.04136,  0.04136,   1.0 },
 	{ 0.727811, 0.626959, 0.626959,  1.0 },
 	76.8 };
 
 /* 色 */
-GLfloat red[]     = { 0.8, 0.2, 0.2, 1.0 };	//赤色
-GLfloat green[]   = { 0.2, 0.8, 0.2, 1.0 };	//緑色
-GLfloat blue[]    = { 0.2, 0.2, 0.8, 1.0 };	//青色
-GLfloat yellow[]  = { 0.8, 0.8, 0.2, 1.0 };	//黄色
-GLfloat white[]   = { 1.0, 1.0, 1.0, 1.0 };	//白色
-GLfloat black[]   = { 0.0, 0.0, 0.0, 1.0 };	//黒色
-GLfloat shininess = 30.0;					//光沢の強さ
+GLfloat _RED[]     = { 0.8, 0.2, 0.2, 1.0 };	//赤色
+GLfloat _GREEN[]   = { 0.2, 0.8, 0.2, 1.0 };	//緑色
+GLfloat _BLUE[]    = { 0.2, 0.2, 0.8, 1.0 };	//青色
+GLfloat _YELLOW[]  = { 0.8, 0.8, 0.2, 1.0 };	//黄色
+GLfloat _WHITE[]   = { 1.0, 1.0, 1.0, 1.0 };	//白色
+GLfloat _BLACK[]   = { 0.0, 0.0, 0.0, 1.0 };	//黒色
+GLfloat _SHININESS = 30.0;						//光沢の強さ
 
 /* 光 */
-GLfloat LIGHT_POSITION_0[] = { 0.0, 0.0, 150.0, 1.0 }; //光源0の座標
-
-static GLfloat floor_planar[4];			//床
-static GLfloat floor_s = 50.0f;			//床係数
-static GLfloat wall_s = 10.0f;			//壁の高さ
-static GLfloat pM[16];					//shadowMatrix：m[]
-
-static GLfloat floor_offset = 10;
+static GLfloat _LIGHT_POSITION_0[] = { 0.0, 0.0, 150.0, 1.0 }; //光源0の座標
 
 /* 床 */
+static GLfloat floor_planar[4];			//床
+static GLfloat _FLOOR_S = 50.0f;		//床サイズ用係数
+static GLfloat _WALL_S = 10.0f;			//壁サイズ用係数
+static GLfloat pM[16];					//shadowMatrix：m[]
+static GLfloat _FLOOR_OFFSET = 12.0f;	//穴用床オフセット
+
 typedef struct _QUADS_VERTEX {
 	GLfloat v0[3];
 	GLfloat v1[3];
 	GLfloat v2[3];
 	GLfloat v3[3];
-}QUADS_VERTEX;
-static QUADS_VERTEX floor_v = {
-	{ floor_s,  floor_s, 0.0f },
-	{ -floor_s,  floor_s, 0.0f },
-	{ -floor_s, -floor_s, 0.0f },
-	{ floor_s, -floor_s, 0.0f },
+};
+static _QUADS_VERTEX _FLOOR_VER = {		//影描画用床設定
+	{ _FLOOR_S,  _FLOOR_S,  0.0f },
+	{ -_FLOOR_S, _FLOOR_S,  0.0f },
+	{ -_FLOOR_S, -_FLOOR_S, 0.0f },
+	{ _FLOOR_S,  -_FLOOR_S, 0.0f },
 };
 
-GLdouble floor_vertex[][3] = {
-	{ floor_s  -floor_offset, floor_s*2,				0.0f },
-	{ -floor_s +floor_offset, floor_s*2,				0.0f },
-	{ -floor_s +floor_offset, floor_s*2  -floor_offset, 0.0f },
-	{ -floor_s,				  floor_s*2  -floor_offset, 0.0f },
-	{ -floor_s,				  -floor_s*2 +floor_offset, 0.0f },
-	{ -floor_s +floor_offset, -floor_s*2 +floor_offset, 0.0f },
-	{ -floor_s +floor_offset, -floor_s*2,				0.0f },
-	{ floor_s  -floor_offset, -floor_s*2,				0.0f },
-	{ floor_s  -floor_offset, -floor_s*2 +floor_offset, 0.0f },
-	{ floor_s,				  -floor_s*2 +floor_offset, 0.0f },
-	{ floor_s,				  floor_s*2  -floor_offset, 0.0f },
-	{ floor_s  -floor_offset, floor_s*2  -floor_offset, 0.0f },
+static GLdouble _FLOOR_VERTEX[][3] = {					//床頂点
+	{ _FLOOR_S  -_FLOOR_OFFSET, _FLOOR_S*2,					0.0f },
+	{ -_FLOOR_S +_FLOOR_OFFSET, _FLOOR_S*2,					0.0f },
+	{ -_FLOOR_S +_FLOOR_OFFSET, _FLOOR_S*2  -_FLOOR_OFFSET, 0.0f },
+	{ -_FLOOR_S,				_FLOOR_S*2  -_FLOOR_OFFSET, 0.0f },
+	{ -_FLOOR_S,				-_FLOOR_S*2 +_FLOOR_OFFSET, 0.0f },
+	{ -_FLOOR_S +_FLOOR_OFFSET, -_FLOOR_S*2 +_FLOOR_OFFSET, 0.0f },
+	{ -_FLOOR_S +_FLOOR_OFFSET, -_FLOOR_S*2,				0.0f },
+	{ _FLOOR_S  -_FLOOR_OFFSET, -_FLOOR_S*2,				0.0f },
+	{ _FLOOR_S  -_FLOOR_OFFSET, -_FLOOR_S*2 +_FLOOR_OFFSET, 0.0f },
+	{ _FLOOR_S,				    -_FLOOR_S*2 +_FLOOR_OFFSET, 0.0f },
+	{ _FLOOR_S,				    _FLOOR_S*2  -_FLOOR_OFFSET, 0.0f },
+	{ _FLOOR_S  -_FLOOR_OFFSET, _FLOOR_S*2  -_FLOOR_OFFSET, 0.0f },
 };
-
-int floor_face[][4] = {
+static GLint _FLOOR_FACE[][4] = {						//床面
 	{0,  1,  6,  7},
 	{2,  3,  4,  5},
 	{10, 11, 8,  9}
 };
 
 /* 穴 */
-GLdouble hole_vertex[][3] = {
-	{ -floor_s, -floor_s*2, -wall_s   },
-	{ floor_s,  -floor_s*2, -wall_s   },
-	{ floor_s,  floor_s*2,  -wall_s   },
-	{ -floor_s, floor_s*2,  -wall_s   },
-	{ -floor_s, -floor_s*2, -wall_s/2 },
-	{ floor_s,  -floor_s*2, -wall_s/2 },
-	{ floor_s,  floor_s*2,  -wall_s/2 },
-	{ -floor_s, floor_s*2,  -wall_s/2 },
+static GLdouble _HOLE_VERTEX[][3] = {					//穴頂点
+	{ -_FLOOR_S, -_FLOOR_S*2, -_WALL_S   },
+	{ _FLOOR_S,  -_FLOOR_S*2, -_WALL_S   },
+	{ _FLOOR_S,  _FLOOR_S*2,  -_WALL_S   },
+	{ -_FLOOR_S, _FLOOR_S*2,  -_WALL_S   },
+	{ -_FLOOR_S, -_FLOOR_S*2, -_WALL_S/2 },
+	{ _FLOOR_S,  -_FLOOR_S*2, -_WALL_S/2 },
+	{ _FLOOR_S,  _FLOOR_S*2,  -_WALL_S/2 },
+	{ -_FLOOR_S, _FLOOR_S*2,  -_WALL_S/2 },
 };
 
 /* 壁 */
-GLdouble vertex_top[][3] = {	// 頂点
-	{ -floor_s,  floor_s*2,		    -wall_s },
-	{ floor_s,   floor_s*2,		    -wall_s },
-	{ floor_s,   floor_s*2 +wall_s, -wall_s },
-	{ -floor_s,  floor_s*2 +wall_s, -wall_s },
-	{ -floor_s,  floor_s*2,		    wall_s  },
-	{ floor_s,   floor_s*2,		    wall_s  },
-	{ floor_s,   floor_s*2 +wall_s, wall_s  },
-	{ -floor_s,  floor_s*2 +wall_s, wall_s  },
+static GLdouble _WALL_TOP_VERTEX[][3] = {				// 上壁頂点
+	{ -_FLOOR_S, _FLOOR_S*2,		  -_WALL_S },
+	{ _FLOOR_S,  _FLOOR_S*2,		  -_WALL_S },
+	{ _FLOOR_S,  _FLOOR_S*2 +_WALL_S, -_WALL_S },
+	{ -_FLOOR_S, _FLOOR_S*2 +_WALL_S, -_WALL_S },
+	{ -_FLOOR_S, _FLOOR_S*2,		  _WALL_S  },
+	{ _FLOOR_S,  _FLOOR_S*2,		  _WALL_S  },
+	{ _FLOOR_S,  _FLOOR_S*2 +_WALL_S, _WALL_S  },
+	{ -_FLOOR_S, _FLOOR_S*2 +_WALL_S, _WALL_S  },
 };
-GLdouble vertex_bottom[][3] = {	// 頂点
-	{ -floor_s,  -floor_s*2 -wall_s, -wall_s },
-	{ floor_s,   -floor_s*2 -wall_s, -wall_s },
-	{ floor_s,   -floor_s*2,		 -wall_s },
-	{ -floor_s,  -floor_s*2,		 -wall_s },
-	{ -floor_s,  -floor_s*2 -wall_s, wall_s  },
-	{ floor_s,   -floor_s*2 -wall_s, wall_s  },
-	{ floor_s,   -floor_s*2,		 wall_s  },
-	{ -floor_s,  -floor_s*2,		 wall_s  },
+static GLdouble _WALL_BOTTOM_VERTEX[][3] = {			// 下壁頂点
+	{ -_FLOOR_S, -_FLOOR_S*2 -_WALL_S, -_WALL_S },
+	{ _FLOOR_S,  -_FLOOR_S*2 -_WALL_S, -_WALL_S },
+	{ _FLOOR_S,  -_FLOOR_S*2,		   -_WALL_S },
+	{ -_FLOOR_S, -_FLOOR_S*2,		   -_WALL_S },
+	{ -_FLOOR_S, -_FLOOR_S*2 -_WALL_S, _WALL_S  },
+	{ _FLOOR_S,  -_FLOOR_S*2 -_WALL_S, _WALL_S  },
+	{ _FLOOR_S,  -_FLOOR_S*2,		   _WALL_S  },
+	{ -_FLOOR_S, -_FLOOR_S*2,		   _WALL_S  },
 };
-GLdouble vertex_left[][3] = {	// 頂点
-	{ -floor_s -wall_s,	-floor_s*2 -wall_s,	-wall_s },
-	{ -floor_s,			-floor_s*2 -wall_s,	-wall_s },
-	{ -floor_s,         floor_s*2  +wall_s, -wall_s },
-	{ -floor_s -wall_s, floor_s*2  +wall_s, -wall_s },
-	{ -floor_s -wall_s,	-floor_s*2 -wall_s,	wall_s  },
-	{ -floor_s,			-floor_s*2 -wall_s,	wall_s  },
-	{ -floor_s,		    floor_s*2  +wall_s, wall_s  },
-	{ -floor_s -wall_s, floor_s*2  +wall_s, wall_s  },
+static GLdouble _WALL_LEFT_VERTEX[][3] = {				// 左壁頂点
+	{ -_FLOOR_S -_WALL_S, -_FLOOR_S*2 -_WALL_S,	-_WALL_S },
+	{ -_FLOOR_S,		  -_FLOOR_S*2 -_WALL_S,	-_WALL_S },
+	{ -_FLOOR_S,          _FLOOR_S*2  +_WALL_S, -_WALL_S },
+	{ -_FLOOR_S -_WALL_S, _FLOOR_S*2  +_WALL_S, -_WALL_S },
+	{ -_FLOOR_S -_WALL_S, -_FLOOR_S*2 -_WALL_S,	_WALL_S  },
+	{ -_FLOOR_S,		  -_FLOOR_S*2 -_WALL_S,	_WALL_S  },
+	{ -_FLOOR_S,		  _FLOOR_S*2  +_WALL_S, _WALL_S  },
+	{ -_FLOOR_S -_WALL_S, _FLOOR_S*2  +_WALL_S, _WALL_S  },
 };
-GLdouble vertex_right[][3] = {	// 頂点
-	{ floor_s,		   -floor_s*2 -wall_s, -wall_s },
-	{ floor_s +wall_s, -floor_s*2 -wall_s, -wall_s },
-	{ floor_s +wall_s, floor_s*2  +wall_s, -wall_s },
-	{ floor_s,		   floor_s*2  +wall_s, -wall_s },
-	{ floor_s,		   -floor_s*2 -wall_s, wall_s  },
-	{ floor_s +wall_s, -floor_s*2  -wall_s, wall_s  },
-	{ floor_s +wall_s, floor_s*2  +wall_s, wall_s  },
-	{ floor_s,		   floor_s*2  +wall_s, wall_s  },
+static GLdouble _WALL_RIGHT_VERTEX[][3] = {				// 右壁頂点
+	{ _FLOOR_S,		     -_FLOOR_S*2 -_WALL_S, -_WALL_S },
+	{ _FLOOR_S +_WALL_S, -_FLOOR_S*2 -_WALL_S, -_WALL_S },
+	{ _FLOOR_S +_WALL_S, _FLOOR_S*2  +_WALL_S, -_WALL_S },
+	{ _FLOOR_S,		     _FLOOR_S*2  +_WALL_S, -_WALL_S },
+	{ _FLOOR_S,		     -_FLOOR_S*2 -_WALL_S, _WALL_S  },
+	{ _FLOOR_S +_WALL_S, -_FLOOR_S*2 -_WALL_S, _WALL_S  },
+	{ _FLOOR_S +_WALL_S, _FLOOR_S*2  +_WALL_S, _WALL_S  },
+	{ _FLOOR_S,		     _FLOOR_S*2  +_WALL_S, _WALL_S  },
 };
-int face[][4] = {			// 面(頂点の順番)
+
+/* 四角形 */
+static GLint _QUADS_FACE[][4] = {			// 面(頂点の順番)
 	{ 0, 1, 2, 3 },
 	{ 1, 5, 6, 2 },
 	{ 5, 4, 7, 6 },
@@ -169,8 +170,8 @@ typedef struct _FACE_NORMAL {
 	GLfloat n3[3];
 	GLfloat n4[3];
 	GLfloat n5[3];
-}FACE_NORMAL;
-static FACE_NORMAL face_normal = {		//面の法線ベクトル
+};
+static _FACE_NORMAL _QUADS_FACE_NOMAL = {	//面の法線ベクトル
 	{ 0.0,  0.0,  -1.0 },
 	{ 1.0,  0.0,  0.0  },
 	{ 0.0,  0.0,  1.0  },
@@ -179,49 +180,68 @@ static FACE_NORMAL face_normal = {		//面の法線ベクトル
 	{ 0.0,  1.0,  0.0  }
 };
 
+/* 球 */
+static GLfloat  _SPHERE_RADIUS  = 4.0;		//球の半径
+static GLint    _SPHERE_NUMBER  = 10;		//球の個数
+static GLdouble _FRICTION       = 0.995;	//摩擦による速度減少
+static GLdouble _POS_ADJUSTMENT = 0.01;		//ベクトル位置反映用係数
+static GLdouble _ADD_FORCE_DT   = 0.05;		//add force用係数
+GLdouble		add_force       = 0.0;		//player ball 押し出し変数
+static GLdouble _GRAVITY        = -10.0;	//重力
+static GLdouble _COL_PUSH       = 0.5;		//コリジョン解除時の押し出す距離
 
+struct {									//構造体：p 球体構造体
+	GLdouble x, y, z;
+	GLdouble vx, vy, vz;
+	GLdouble fx, fy;
+	bool     h_flag, d_flag;
+}p[10];
+struct {									//構造体：col_p 球体コリジョン演算用構造体
+	GLdouble x, y, op_x, op_y;
+}col_p[10];
 
-struct {								//構造体：p 描画物体構造体
-	double x, y, z;
-	double vx, vy, vz;
-}p[100];
-int pn = 0;								//pnumber：新しく描画した物体番号
-double ax = 0.0, ay = 0.0, az = -4.0;	//addx,addy,addz：add force
-double vx = 5.0, vy = 5.0, vz = 20.0;	//vectorx,vectory,vectorz：物体移動の方向ベクトル
-double hanpatu = 0.9;					//床反発係数
+bool enable_play = true;					//プレイ可能
 
-double dt = 0.05;						//物体加算変数
-
-double sphere_radius = 4.0;				//球の半径
-double sphere_number = 100;				//球の個数
-
-bool key_space = false;
-double add_force = 0.0;
+/* 入力 */
+bool _SPACE_KEY_PRESSING = false;			//スペースキー長押し検知
 
 //----------------------------------------------------
 // 関数プロトタイプ（後に呼び出す関数名と引数の宣言）
 //----------------------------------------------------
+/* 必要関数 */
 void Initialize(void);
 void Idle(void);
 void Display(void);
 void Resize(int w, int h);
 
-int Collision(int n);
-void WallCollistion(int n);
+/* 物体描画 */
+void InitialSphere(void);
+void DrawSphereOfPlayer(void);
+void DrawSphereOfTarget(void);
+void DrawTable(void);
+void DrawWall(void);
+void DrawHole(void);
+void DrawFloor(void);
 
-void Sphere(void);
-void Wall(void);
-void Hole(void);
+/* 演算 */
+void  SphereAddForce(GLint n);
+GLint CollisionSphere(GLint n);
+void  CollisionSphereProcess(GLint n, GLint op_n, GLdouble angle);
+void  NotCollisionPosition(GLint n, GLint op_n);
+void  CollisionWall(GLint n);
+void  CollisionHole(GLint n);
+bool  CollisionFloor(GLint n);
 
-void findPlane(GLfloat plane[4], GLfloat v0[3], GLfloat v1[3], GLfloat v2[3]);
-void shadowMatrix(GLfloat *m, GLfloat plane[4], GLfloat light[4]);
-void DrawTable(bool bTexture);
+/* 影(ステンシル) */
+void FindPlane(GLfloat plane[4], GLfloat v0[3], GLfloat v1[3], GLfloat v2[3]);
+void ShadowMatrix(GLfloat *m, GLfloat plane[4], GLfloat light[4]);
 void DrawShadow(void);
-void DrawStructure(bool);
 
+/* 視点回転 */
 void Qmul(double r[], const double p[], const double q[]);
 void Qrot(double r[], double q[]);
 
+/* 入力 */
 void Keyboard(unsigned char key, int x, int y);
 void KeyboardUp(unsigned char key, int x, int y);
 void MouseMotion(int x, int y);
@@ -231,17 +251,17 @@ void MouseWheel(float z);
 //----------------------------------------------------
 // メイン関数
 //----------------------------------------------------
-int main(int argc, char *argv[]) {
+GLint main(int argc, char *argv[]) {
 	srand((unsigned)time(NULL));									//乱数の発生
 	glutInit(&argc, argv);											//環境の初期化
-	glutInitWindowPosition(WINDOW_POSITION_X, WINDOW_POSITION_Y);	//ウィンドウの位置の指定
-	glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);				//ウィンドウサイズの指定
+	glutInitWindowPosition(_WINDOW_POSITION_X, _WINDOW_POSITION_Y);	//ウィンドウの位置の指定
+	glutInitWindowSize(_WINDOW_WIDTH, _WINDOW_HEIGHT);				//ウィンドウサイズの指定
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);		//ディスプレイモードの指定(RGBA,デプスバッファ,ダブルバッファ)
-	glutCreateWindow(WINDOW_TITLE);									//ウィンドウの作成
+	glutCreateWindow(_WINDOW_TITLE);									//ウィンドウの作成
 	glutDisplayFunc(Display);										//描画時に呼び出される関数
 	glutReshapeFunc(Resize);										//リサイズ時に呼び出される関数
 	glutKeyboardFunc(Keyboard);										//キーボード入力時に呼び出される関数
-	glutKeyboardUpFunc(KeyboardUp);
+	glutKeyboardUpFunc(KeyboardUp);									//キーボードが離された時に呼び出される関数
 	glutIgnoreKeyRepeat(GL_TRUE);									//キーの繰り返し入力は無視
 	glutMouseFunc(MouseOn);											//マウスクリック時に呼び出される関数
 	glutMotionFunc(MouseMotion);									//マウスドラッグ解除時に呼び出される関数
@@ -260,19 +280,19 @@ void Initialize(void) {
 	glDepthFunc(GL_LEQUAL);				//深度バッファと新しいピクセル地の深度の比較関数(GL_LEQUAL：格納深度以下であれば通過)
 	glClearDepth(1.0);
 
-	findPlane(floor_planar,
-		floor_v.v0,
-		floor_v.v1,
-		floor_v.v2);
+	FindPlane(floor_planar,				//ステンシルを張るための床を見つける
+		_FLOOR_VER.v0,
+		_FLOOR_VER.v1,
+		_FLOOR_VER.v2);
 
 	/* 光源の設定 */
 	glEnable(GL_LIGHTING);									//陰影ON
 	glEnable(GL_LIGHT0);									//光源0を利用
-	glLightfv(GL_LIGHT0, GL_POSITION, LIGHT_POSITION_0);	//光源0の位置
+	glLightfv(GL_LIGHT0, GL_POSITION, _LIGHT_POSITION_0);	//光源0の位置
 
 	/* ディスプレイリストを作成 */
-	listNumber = glGenLists(1);
-	glNewList(listNumber, GL_COMPILE);	//コンパイルのみ
+	list_number = glGenLists(1);
+	glNewList(list_number, GL_COMPILE);	//コンパイルのみ
 	glEndList();
 
 	/* マウスポインタ位置のウィンドウ内の相対的位置への換算用 */
@@ -290,7 +310,10 @@ void Initialize(void) {
 	glEnable(GL_NORMALIZE);
 
 	/* 平面射影行列の算出 */
-	shadowMatrix(pM, floor_planar, LIGHT_POSITION_0);
+	ShadowMatrix(pM, floor_planar, _LIGHT_POSITION_0);
+
+	/* 物体配置 */
+	InitialSphere();
 
 }
 
@@ -300,7 +323,7 @@ void Initialize(void) {
 void Idle() {
 	glutPostRedisplay(); //glutDisplayFunc()を１回実行する
 
-	if (key_space) {
+	if (_SPACE_KEY_PRESSING) {		//継続してaddforceを加える
 		if (add_force <= 3500) {
 			add_force += 15;
 		}
@@ -316,7 +339,7 @@ void Resize(int w, int h) {
 	/* 透視変換行列の設定 */
 	glMatrixMode(GL_PROJECTION);	//行列モードの設定GL_PROJECTION : 透視変換行列の設定、GL_MODELVIEW：モデルビュー変換行列）
 	glLoadIdentity();																	//行列の初期化(変換行列に単位行列を設定)
-	gluPerspective(30.0, (double)WINDOW_WIDTH / (double)WINDOW_HEIGHT, 0.1, 1000.0);	//透視投影法の視体積
+	gluPerspective(30.0, (double)_WINDOW_WIDTH / (double)_WINDOW_HEIGHT, 0.1, 1000.0);	//透視投影法の視体積
 	//gluPerspactive(画角, アスペクト比, 奥行き前, 奥行き後ろ);
 
 	/* モデルビュー変換行列の設定 */
@@ -341,155 +364,350 @@ void Display(void) {
 	/* 回転 */
 	glMultMatrixd(rt);		//任意の行列を積算する関数
 
-	/* 図形の描画 */
-	Sphere();		//球
+	/* 図形 */
+	DrawSphereOfPlayer();		//球
+	DrawSphereOfTarget();
 
-	DrawStructure(false);
+	/* 影 */
 	DrawShadow();
+
 	glPopMatrix();
 
 	glutSwapBuffers(); //glutInitDisplayMode(GLUT_DOUBLE)でダブルバッファリングを利用可
 }
+
 //----------------------------------------------------
-// 物体の描画
+// 球体初期設定
 //----------------------------------------------------
-void DrawStructure(bool flag) {
-	for (int i = 1; i <= pn; i++) {
-		p[i].vx += ax * dt;				//vector = vector + add * dt
-		p[i].vy += ay * dt;				//vector = vector + add * dt
-		p[i].vz += az * dt;				//vector = vector + add * dt
-		p[i].x += p[i].vx * dt;			//position = vector * dt
-		p[i].y += p[i].vy * dt;			//position = vector * dt
-		p[i].z += p[i].vz * dt;			//position = vector * dt
-		if (p[i].z < 4 && abs(p[i].x) < floor_s  && abs(p[i].y) < floor_s) {
-		//z < 4(球体半径?)
-		//|x| < floorのx両端
-		//|y| < floorのy両端  //床上で床を抜ける場合
-			p[i].z = 4.0;					//zを床上に乗る位置に更新
-			p[i].vz = -hanpatu * p[i].vz;	//vector = -反発係数 * vector  //床による反発によるベクトル更新
+void InitialSphere(void) {
+	/* Z of All Sphere */
+	for (GLint i = 0; i < _SPHERE_NUMBER; i++) {
+		p[i].z = _SPHERE_RADIUS;
+	}
+
+	/* Player Sphere */
+	p[0].x = 0.0; p[0].y = -_FLOOR_S;
+
+	/* Target Sphere */
+	p[1].x = 0.0;						p[1].y = 10.0;
+	p[2].x = -_SPHERE_RADIUS     - 1.0;	p[2].y = 10.0 + 2 * _SPHERE_RADIUS;
+	p[3].x = _SPHERE_RADIUS		 + 1.0;	p[3].y = 10.0 + 2 * _SPHERE_RADIUS;
+	p[4].x = -_SPHERE_RADIUS * 2 - 1.0;	p[4].y = 10.0 + 4 * _SPHERE_RADIUS;
+	p[5].x = 0.0;						p[5].y = 10.0 + 4 * _SPHERE_RADIUS;
+	p[6].x = _SPHERE_RADIUS * 2  + 1.0;	p[6].y = 10.0 + 4 * _SPHERE_RADIUS;
+	p[7].x = -_SPHERE_RADIUS     - 1.0;	p[7].y = 10.0 + 6 * _SPHERE_RADIUS;
+	p[8].x = _SPHERE_RADIUS      + 1.0;	p[8].y = 10.0 + 6 * _SPHERE_RADIUS;
+	p[9].x = 0.0;						p[9].y = 10.0 + 8 * _SPHERE_RADIUS;
+};
+
+//----------------------------------------------------
+// Player球体の描画
+//----------------------------------------------------
+int a = 0;
+void DrawSphereOfPlayer(void) {
+	GLint n = 0; //Player ball is p[0]
+	if (p[n].z > -_WALL_S / 2) {				//球体が穴の中に消えていない
+		if (CollisionFloor(n)) {				//球が床上
+			//cout << p[n].vx << "," << p[n].vy << "\n";
+			CollisionWall(n);					//壁の跳ね返り
+			GLint opponent = CollisionSphere(n);	//球同士の衝突
+
+			if (opponent > 0) {					//どれかの球と衝突している場合
+				NotCollisionPosition(n, opponent);													//コリジョン解除
+				GLdouble angle_n_op = atan2((p[opponent].y - p[n].y), (p[opponent].x - p[n].x));	//角度(n-op)
+				GLdouble angle_op_n = atan2((p[n].y - p[opponent].y), (p[n].x - p[opponent].x));	//角度(op-n)
+				CollisionSphereProcess(n, opponent, angle_n_op);									//衝突後のベクトル(n-op)
+				CollisionSphereProcess(opponent, n, angle_op_n);									//衝突後のベクトル(op-n)
+				p[n].vx = col_p[n].x + col_p[opponent].op_x;										//自球xベクトル
+				p[n].vy = col_p[n].y + col_p[opponent].op_y;										//自球yベクトル
+				p[opponent].vx = col_p[n].op_x + col_p[opponent].x;									//相手球xベクトル
+				p[opponent].vy = col_p[n].op_y + col_p[opponent].y;									//相手球yベクトル
+			}
 		}
-		if (!flag || p[i].z >0) {			//display or z > 0
+		else {									//球が穴内部
+			CollisionHole(n);					//穴内部コリジョン
+		}
+		SphereAddForce(n);						//球体移動演算
+
+		/* 描画 */
+		glPushMatrix();
+		glMaterialfv(GL_FRONT, GL_AMBIENT,   _MS_WHITE_PLASTIC.ambient);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE,   _MS_WHITE_PLASTIC.diffuse);
+		glMaterialfv(GL_FRONT, GL_SPECULAR,  _MS_WHITE_PLASTIC.specular);
+		glMaterialfv(GL_FRONT, GL_SHININESS, &_MS_WHITE_PLASTIC.shininess);
+		glTranslated(p[n].x, p[n].y, p[n].z);	    //平行移動値の設定
+		glutSolidSphere(_SPHERE_RADIUS, 20, 20);	//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
+		glPopMatrix();
+	}
+}
+//----------------------------------------------------
+// Target球体の描画
+//----------------------------------------------------
+void DrawSphereOfTarget(void) {
+	for (GLint n = 1; n < _SPHERE_NUMBER; n++) {
+		if (p[n].z > -_WALL_S / 2) {				//球体が穴の中に消えていない
+			if (CollisionFloor(n)) {				//球が床上
+				CollisionWall(n);					//壁の跳ね返り
+				GLint opponent = CollisionSphere(n);	//球同士の衝突
+
+				if (opponent > 0) {					//どれかの球と衝突している場合
+					NotCollisionPosition(n, opponent);													//コリジョン解除
+					GLdouble angle_n_op = atan2((p[opponent].y - p[n].y), (p[opponent].x - p[n].x));	//角度(n-op)
+					GLdouble angle_op_n = atan2((p[n].y - p[opponent].y), (p[n].x - p[opponent].x));	//角度(op-n)
+					CollisionSphereProcess(n, opponent, angle_n_op);									//衝突後のベクトル(n-op)
+					CollisionSphereProcess(opponent, n, angle_op_n);									//衝突後のベクトル(op-n)
+					p[n].vx = col_p[n].x + col_p[opponent].op_x;										//自球xベクトル
+					p[n].vy = col_p[n].y + col_p[opponent].op_y;										//自球yベクトル
+					p[opponent].vx = col_p[n].op_x + col_p[opponent].x;									//相手球xベクトル
+					p[opponent].vy = col_p[n].op_y + col_p[opponent].y;									//相手球yベクトル
+				}
+			}
+			else {									//球が穴内部
+				CollisionHole(n);					//穴内部コリジョン
+			}
+
+			//cout << "1:" << p[n].x << "," << p[n].y << "," << p[n].vx << "," << p[n].vy << "\n";
+
+			SphereAddForce(n);						//球体移動演算
+
+			//cout << "2:" << p[n].x << "," << p[n].y << "," << p[n].vx << "," << p[n].vy << "\n";
+
 			glPushMatrix();
-			glMaterialfv(GL_FRONT, GL_AMBIENT, ms_ruby.ambient);
-			glMaterialfv(GL_FRONT, GL_DIFFUSE, ms_ruby.diffuse);
-			glMaterialfv(GL_FRONT, GL_SPECULAR, ms_ruby.specular);
-			glMaterialfv(GL_FRONT, GL_SHININESS, &ms_ruby.shininess);
-			glTranslated(p[i].x, p[i].y, p[i].z);	//平行移動値の設定
-			glutSolidSphere(sphere_radius, 20, 20);			//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
+			glMaterialfv(GL_FRONT, GL_AMBIENT, _MS_RUBY.ambient);
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, _MS_RUBY.diffuse);
+			glMaterialfv(GL_FRONT, GL_SPECULAR, _MS_RUBY.specular);
+			glMaterialfv(GL_FRONT, GL_SHININESS, &_MS_RUBY.shininess);
+			glTranslated(p[n].x, p[n].y, p[n].z);	//平行移動値の設定
+			glutSolidSphere(_SPHERE_RADIUS, 20, 20);	//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
 			glPopMatrix();
 		}
 	}
 }
 
-int Collision(int n) {
-	for (size_t i = n; i < sphere_number; i++) {
-		if (i == n){}
-		else {
-			if (abs((p[n].x-p[i].x) + (p[n].y-p[i].y) + (p[n].z-p[i].z)) <= sphere_radius*sphere_radius) {
-				return i;
-			}
+//----------------------------------------------------
+// テーブルの描画
+//----------------------------------------------------
+void DrawTable(void) {
+	glDisable(GL_LIGHTING);
+	DrawWall();
+	DrawHole();
+	DrawFloor();
+	glEnable(GL_LIGHTING);
+}
+//----------------------------------------------------
+// 壁(直方体)の描画
+//----------------------------------------------------
+void DrawWall(void) {
+	glPushMatrix();
+	glBegin(GL_QUADS);							//GL_QUADS：4点組の四角形
+	glColor4fv(_RED);
+	for (GLint j = 0; j < 6; ++j) {
+		for (GLint i = 0; i < 4; ++i) {
+			glVertex3dv(_WALL_TOP_VERTEX[_QUADS_FACE[j][i]]);
+		}
+	}
+	glEnd();
+	glBegin(GL_QUADS);							//GL_QUADS：4点組の四角形
+	for (GLint j = 0; j < 6; ++j) {
+		for (GLint i = 0; i < 4; ++i) {
+			glVertex3dv(_WALL_BOTTOM_VERTEX[_QUADS_FACE[j][i]]);
+		}
+	}
+	glEnd();
+	glBegin(GL_QUADS);							//GL_QUADS：4点組の四角形
+	for (GLint j = 0; j < 6; ++j) {
+		for (GLint i = 0; i < 4; ++i) {
+			glVertex3dv(_WALL_LEFT_VERTEX[_QUADS_FACE[j][i]]);
+		}
+	}
+	glEnd();
+	glBegin(GL_QUADS);							//GL_QUADS：4点組の四角形
+	for (GLint j = 0; j < 6; ++j) {
+		for (GLint i = 0; i < 4; ++i) {
+			glVertex3dv(_WALL_RIGHT_VERTEX[_QUADS_FACE[j][i]]);
+		}
+	}
+	glEnd();
+	glPopMatrix();
+}
+//----------------------------------------------------
+// 穴(下床)の描画
+//----------------------------------------------------
+void DrawHole(void) {
+	glPushMatrix();
+	glColor4fv(_BLACK);
+	glBegin(GL_QUADS);
+	for (GLint j = 0; j < 6; ++j) {
+		for (GLint i = 0; i < 4; ++i) {
+			glVertex3dv(_HOLE_VERTEX[_QUADS_FACE[j][i]]);
+		}
+	}
+	glEnd();
+	glPopMatrix();
+}
+//----------------------------------------------------
+// 床の描画
+//----------------------------------------------------
+void DrawFloor(void) {
+	glPushMatrix();
+	glColor4fv(_GREEN);
+	glBegin(GL_QUADS);
+	for (GLint j = 0; j < 3; ++j) {
+		for (GLint i = 0; i < 4; ++i) {
+			glVertex3dv(_FLOOR_VERTEX[_FLOOR_FACE[j][i]]);
+		}
+	}
+	glEnd();
+	glPopMatrix();
+}
+
+//----------------------------------------------------
+// 球体の移動演算
+//----------------------------------------------------
+void SphereAddForce(GLint n) {
+	p[n].vx = p[n].vx * _FRICTION;
+	p[n].vy = p[n].vy * _FRICTION;
+	p[n].x += p[n].vx * _POS_ADJUSTMENT;
+	p[n].y += p[n].vy * _POS_ADJUSTMENT;
+	p[n].z += p[n].vz * _POS_ADJUSTMENT;
+	if (abs(p[n].vy) < 0.01) {	//失速による停止
+		p[n].vy = 0.0;
+	}
+	if (abs(p[n].vx) < 0.01) {	//失速による停止
+		p[n].vx = 0.0;
+	}
+}
+
+//----------------------------------------------------
+// 球体同士の当たり判定
+//----------------------------------------------------
+GLint CollisionSphere(GLint n) {
+	for (GLint i = n+1; i < _SPHERE_NUMBER; i++) {
+		if (abs((p[n].x-p[i].x)*(p[n].x - p[i].x) + 
+			(p[n].y-p[i].y)*(p[n].y - p[i].y) + 
+				(p[n].z-p[i].z)*(p[n].z - p[i].z)) 
+					<= (2*_SPHERE_RADIUS) * (2*_SPHERE_RADIUS)) {	//二つの球の距離が直径より小さい時
+			col_p[n].x = 0;
+			col_p[n].y = 0;
+			col_p[n].op_x = 0;
+			col_p[n].op_y = 0;
+			col_p[i].x = 0;
+			col_p[i].y = 0;
+			col_p[i].op_x = 0;
+			col_p[i].op_y = 0;
+			return i;
 		}
 	}
 	return -1;
 }
 
-void WallCollistion(int n) {
-	if (abs(p[n].y) > floor_s * 2 - sphere_radius) {
+//----------------------------------------------------
+// 球体同士の当たり時の演算
+//----------------------------------------------------
+void CollisionSphereProcess(GLint n, GLint op_n, GLdouble angle) {			//n:自球, op_n:相手球, angle:球間の角度
+	GLdouble diagonal = sqrt(p[n].vx*p[n].vx + p[n].vy*p[n].vy);	//対角線の長さ
+	GLdouble direction_travel = atan2(p[n].vy, p[n].vx);			//進行方向
+	GLdouble difference_angle = direction_travel - angle;			//角度の差
+	GLdouble after_opv = abs(diagonal * cos(difference_angle));		//衝突後相手ベクトル
+	GLdouble after_nv  = abs(diagonal * sin(difference_angle));		//衝突後自分ベクトル
+	GLdouble after_opvx = after_opv * cos(angle);					//衝突後相手ベクトルx
+	GLdouble after_opvy = after_opv * sin(angle);					//衝突後相手ベクトルy
+
+	GLdouble after_nvx, after_nvy;									//衝突後自ベクトルx,衝突後自ベクトルy
+
+	if (sin(difference_angle) < 0) {
+		after_nvx = after_nv * cos(angle - M_PI / 2);
+		after_nvy = after_nv * sin(angle - M_PI / 2);
+	}else{
+		after_nvx = after_nv * cos(angle + M_PI / 2);
+		after_nvy = after_nv * sin(angle + M_PI / 2);
+	}	
+
+	col_p[n].x    += after_nvx;
+	col_p[n].y    += after_nvy;
+	col_p[n].op_x += after_opvx;
+	col_p[n].op_y += after_opvy;
+}
+
+//----------------------------------------------------
+// 球体同士の当たり時のコリジョン解除
+//----------------------------------------------------
+void NotCollisionPosition(GLint n, GLint op_n) {
+	GLdouble new_pos = atan2((p[n].y - p[op_n].y), (p[n].x - p[op_n].x));
+	p[n].x = _COL_PUSH*cos(new_pos) + p[n].x;
+	p[n].y = _COL_PUSH*sin(new_pos) + p[n].y;
+}
+
+//----------------------------------------------------
+// 球体と壁の当たり判定および演算
+//----------------------------------------------------
+void CollisionWall(GLint n) {
+	if (abs(p[n].y)+1.0 > _FLOOR_S * 2 - _SPHERE_RADIUS) {	//上下壁
+		p[n].vy = -p[n].vy;
+	}
+	if (abs(p[n].x)+1.0 > _FLOOR_S - _SPHERE_RADIUS) {		//左右壁
+		p[n].vx = -p[n].vx;
+	}
+}
+
+//----------------------------------------------------
+// 球体と穴内部の当たり判定および計算
+//----------------------------------------------------
+void CollisionHole(GLint n) {
+	//h_flag：穴内部に入り、一度壁に反射してから穴内部壁の反射を有効にする
+	if (abs(p[n].y) > _FLOOR_S * 2 - _SPHERE_RADIUS) {										//テーブル上下壁
+		double a = -(1.0) * p[n].vy;
+		p[n].vy = 2 * a*(1.0) + p[n].vy;
+		p[n].h_flag = true;
+	}
+	if ((abs(p[n].y) < _FLOOR_S * 2 + _SPHERE_RADIUS - _FLOOR_OFFSET) && p[n].h_flag) {		//穴内部上下壁
 		double a = -(1.0) * p[n].vy;
 		p[n].vy = 2 * a*(1.0) + p[n].vy;
 	}
-	if (abs(p[n].x) > floor_s - sphere_radius) {
+	if (abs(p[n].x) > _FLOOR_S - _SPHERE_RADIUS) {											//テーブル左右壁
+		double a = -(1.0) * p[n].vx;
+		p[n].vx = 2 * a*(1.0) + p[n].vx;
+		p[n].h_flag = true;
+	}
+	if ((abs(p[n].x) < _FLOOR_S + _SPHERE_RADIUS - _FLOOR_OFFSET) && p[n].h_flag) {			//穴内部左右壁
 		double a = -(1.0) * p[n].vx;
 		p[n].vx = 2 * a*(1.0) + p[n].vx;
 	}
 }
-//----------------------------------------------------
-// 球
-//---------------------------------------------------
-double sphere_y = 0.0;
-double sphere_vy = 0.0;
-double force = 0.0;
-void Sphere(void) {
-	int n = 1;
-	p[n].vy += force * dt;
-	p[n].y += p[n].vy * 0.01;
-	if (p[n].vy < 0) { force = 2.0; }	//座標軸をまたぐときの符号変換
-	else if(p[n].vy > 0){ force = -2.0; }
-	if (abs(p[n].vy) < 0.01) {	//失速による停止
-		p[n].vy = 0.0;
-		force = 0;
-	}
-	WallCollistion(n);
-	glPushMatrix();
-	glMaterialfv(GL_FRONT, GL_AMBIENT, ms_ruby.ambient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, ms_ruby.diffuse);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, ms_ruby.specular);
-	glMaterialfv(GL_FRONT, GL_SHININESS, &ms_ruby.shininess);
-	glTranslated(0.0, p[n].y, sphere_radius);	//平行移動値の設定
-	glutSolidSphere(sphere_radius, 20, 20);	//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
-	glPopMatrix();
-}
-
-
 
 //----------------------------------------------------
-// 壁(直方体)
+// 球体と床の当たり判定
 //----------------------------------------------------
-void Wall(void) {
-	glPushMatrix();
-	glDisable(GL_LIGHTING);
-	glBegin(GL_QUADS);							//GL_QUADS：4点組の四角形
-	glColor4fv(red);
-	for (int j = 0; j < 6; ++j) {
-		for (int i = 0; i < 4; ++i) {
-			glVertex3dv(vertex_top[face[j][i]]);
+bool CollisionFloor(GLint n) {
+	p[n].vz = _GRAVITY;
+	if (p[n].z < _SPHERE_RADIUS+1 && p[n].z > 0) {				//床の高さより上(上下余裕あり)
+		if (2 * _FLOOR_S - _SPHERE_RADIUS  > p[n].y &&
+			-2 * _FLOOR_S + _SPHERE_RADIUS < p[n].y &&
+			_FLOOR_S + _SPHERE_RADIUS/2 - _FLOOR_OFFSET    > p[n].x &&
+			-_FLOOR_S - _SPHERE_RADIUS/2 + _FLOOR_OFFSET	  < p[n].x) {			//床上1(床を二つの長方形に見立てる)
+			p[n].h_flag = false;												//穴内部ではない
+			p[n].z = _SPHERE_RADIUS;											//球を床上適切な位置に調整
+			p[n].vz = _GRAVITY - _GRAVITY;										//沈まないように重力の打ち消し
+			return true;
+		}
+		else if (2 * _FLOOR_S + _SPHERE_RADIUS/2 - _FLOOR_OFFSET  > p[n].y &&
+			-2 * _FLOOR_S - _SPHERE_RADIUS/2 + _FLOOR_OFFSET < p[n].y &&
+			_FLOOR_S - _SPHERE_RADIUS  > p[n].x &&
+			-_FLOOR_S + _SPHERE_RADIUS < p[n].x) {								//床上2(床を二つの長方形に見立てる)
+			p[n].h_flag = false;
+			p[n].z = _SPHERE_RADIUS;
+			p[n].vz = _GRAVITY - _GRAVITY;
+			return true;
 		}
 	}
-	glEnd();
-	glBegin(GL_QUADS);							//GL_QUADS：4点組の四角形
-	for (int j = 0; j < 6; ++j) {
-		for (int i = 0; i < 4; ++i) {
-			glVertex3dv(vertex_bottom[face[j][i]]);
-		}
-	}
-	glEnd();
-	glBegin(GL_QUADS);							//GL_QUADS：4点組の四角形
-	for (int j = 0; j < 6; ++j) {
-		for (int i = 0; i < 4; ++i) {
-			glVertex3dv(vertex_left[face[j][i]]);
-		}
-	}
-	glEnd();
-	glBegin(GL_QUADS);							//GL_QUADS：4点組の四角形
-	for (int j = 0; j < 6; ++j) {
-		for (int i = 0; i < 4; ++i) {
-			glVertex3dv(vertex_right[face[j][i]]);
-		}
-	}
-	glEnd();
-	glEnable(GL_LIGHTING);
-	glPopMatrix();
+	return false;	//床上でない = 穴
 }
-//----------------------------------------------------
-// 穴の描画
-//----------------------------------------------------
-void Hole(void) {
-	glDisable(GL_LIGHTING);
-	glColor4fv(black);
-	glBegin(GL_QUADS);
-	for (int j = 0; j < 6; ++j) {
-		for (int i = 0; i < 4; ++i) {
-			glVertex3dv(hole_vertex[face[j][i]]);
-		}
-	}
-	glEnd();
-	glEnable(GL_LIGHTING);
-}
+
 
 //----------------------------------------------------
 // 床平面の方程式
 //----------------------------------------------------
-void findPlane(
+void FindPlane(
 	GLfloat plane[4],	// 作成する平面方程式の係数
 	GLfloat v0[3],		// 頂点１
 	GLfloat v1[3],		// 頂点２
@@ -517,7 +735,7 @@ void findPlane(
 //----------------------------------------------------
 // 行列の計算
 //----------------------------------------------------
-void shadowMatrix(
+void ShadowMatrix(
 	GLfloat *m,			// 作成する行列のポインタ
 	GLfloat plane[4],	// 射影する表面の平面方程式の係数
 	GLfloat light[4])	// 光源の同時座標値
@@ -552,25 +770,6 @@ void shadowMatrix(
 }
 
 //----------------------------------------------------
-// 床の描画
-//----------------------------------------------------
-void DrawTable(bool bTexture) {
-	if (!bTexture) {
-		glDisable(GL_LIGHTING);
-		glBegin(GL_QUADS);
-		for (int j = 0; j < 3; ++j) {
-			for (int i = 0; i < 4; ++i) {
-				glVertex3dv(floor_vertex[floor_face[j][i]]);
-			}
-		}
-		glEnd();
-		glEnable(GL_LIGHTING);
-	}
-	Wall();
-	Hole();
-}
-
-//----------------------------------------------------
 // 影の描画
 //----------------------------------------------------
 void DrawShadow(void) {
@@ -580,8 +779,7 @@ void DrawShadow(void) {
 
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);	//これから描画するもののステンシル値にすべて１タグをつける
 	//(GL_REPLACE：flStencilFunc()第二引数に置き換え)
-	glColor4fv(green);
-	DrawTable(false);							//床の描画
+	DrawTable();							//床の描画
 
 	/* カラー・デプスバッファマスクをセットする
 	 * これで以下の内容のピクセルの色の値は、書き込まれない。*/
@@ -597,8 +795,8 @@ void DrawShadow(void) {
 	glDisable(GL_DEPTH_TEST);
 	glPushMatrix();
 	glMultMatrixf(pM);							//現在の行列にpM(shadowMatrix)を掛ける
-	DrawStructure(true);
-	Sphere();
+	DrawSphereOfPlayer();
+	DrawSphereOfTarget();
 	glPopMatrix();
 	glEnable(GL_DEPTH_TEST);
 
@@ -612,7 +810,7 @@ void DrawShadow(void) {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);	//アルファブレンド
 	glColor4f(0.1f, 0.1f, 0.1f, 0.5f);
 	glDisable(GL_DEPTH_TEST);
-	DrawTable(false);									//床の描画
+	DrawTable();									//床の描画
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 	glDisable(GL_STENCIL_TEST);
@@ -623,17 +821,8 @@ void DrawShadow(void) {
 //----------------------------------------------------
 void Keyboard(unsigned char key, int x, int y) {
 	switch (key) {
-	case 'a':
-		pn++;
-		p[pn].x = -0.0;
-		p[pn].y = -10.0;
-		p[pn].z = 5.0;
-		p[pn].vx = vx * ((double)rand() / (double)RAND_MAX - (double)rand() / (double)RAND_MAX);
-		p[pn].vy = vy * ((double)rand() / (double)RAND_MAX - (double)rand() / (double)RAND_MAX);
-		p[pn].vz = vz * ((double)rand() / (double)RAND_MAX);
-		break;
 	case '\040':	//SP
-		key_space = true;
+		_SPACE_KEY_PRESSING = true;
 		break;
 	case '\033':	//ESCのASCIIコード
 		exit(0);
@@ -643,11 +832,14 @@ void Keyboard(unsigned char key, int x, int y) {
 	}
 }
 
+//----------------------------------------------------
+// キーボードが離された時に呼び出される関数
+//----------------------------------------------------
 void KeyboardUp(unsigned char key, int x, int y) {
 	switch (key) {
 	case '\040':	//SP
-		key_space = false;
-		force = add_force;
+		_SPACE_KEY_PRESSING = false;
+		p[0].vy += 2 * add_force * _ADD_FORCE_DT;
 		add_force = 0.0;
 		break;
 	}
@@ -707,7 +899,6 @@ void MouseOn(int button, int state, int x, int y)
 	default:
 		break;
 	}
-	cout << x << " " << y << endl;
 }
 
 //----------------------------------------------------
