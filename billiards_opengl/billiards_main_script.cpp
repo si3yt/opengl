@@ -1,10 +1,13 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <direct.h>
 #include <time.h>
+#include <vector>
 #include <GL/glut.h>
 using namespace std;
 
@@ -185,7 +188,7 @@ static GLfloat  _SPHERE_RADIUS  = 4.0;		//球の半径
 static GLint    _SPHERE_NUMBER  = 10;		//球の個数
 static GLdouble _FRICTION       = 0.995;	//摩擦による速度減少
 static GLdouble _POS_ADJUSTMENT = 0.01;		//ベクトル位置反映用係数
-static GLdouble _ADD_FORCE_DT   = 0.05;		//add force用係数
+static GLdouble _ADD_FORCE_DT   = 0.02;		//add force用係数
 GLdouble		add_force       = 0.0;		//player ball 押し出し変数
 static GLdouble _GRAVITY        = -10.0;	//重力
 static GLdouble _COL_PUSH       = 0.5;		//コリジョン解除時の押し出す距離
@@ -200,10 +203,25 @@ struct {									//構造体：col_p 球体コリジョン演算用構造体
 	GLdouble x, y, op_x, op_y;
 }col_p[10];
 
+std::vector<GLint> opponent_num;			//コリジョン
+
 bool enable_play = true;					//プレイ可能
 
+/* キュー */
+static GLdouble _CYLINDER_RADIUS = 3.0;
+static GLdouble _CYLINDER_HEIGHT = 50.0;
+static GLint	_CYLINDER_SIDES  = 10;
+
 /* 入力 */
-bool _SPACE_KEY_PRESSING = false;			//スペースキー長押し検知
+bool space_key_pressing = false;			//スペースキー長押し検知
+bool left_key_pressing  = false;			//LEFTキー長押し検知
+bool right_key_pressing = false;			//RIGHTキー長押し検知
+GLdouble look_x		  = 0.0;
+GLdouble look_y		  = 0.0;
+static GLdouble _LOOK_PLUS   = 5.0;
+GLdouble look_sign    = -1.0;
+static GLdouble _LOOK_RADIUS = 300.0;
+GLdouble look_angle   = 0.0;
 
 //----------------------------------------------------
 // 関数プロトタイプ（後に呼び出す関数名と引数の宣言）
@@ -222,15 +240,16 @@ void DrawTable(void);
 void DrawWall(void);
 void DrawHole(void);
 void DrawFloor(void);
+void DrawCylinder(void);
 
 /* 演算 */
-void  SphereAddForce(GLint n);
-GLint CollisionSphere(GLint n);
-void  CollisionSphereProcess(GLint n, GLint op_n, GLdouble angle);
-void  NotCollisionPosition(GLint n, GLint op_n);
-void  CollisionWall(GLint n);
-void  CollisionHole(GLint n);
-bool  CollisionFloor(GLint n);
+void SphereAddForce(GLint n);
+bool CollisionSphere(GLint n);
+void CollisionSphereProcess(GLint n, GLint op_n, GLdouble angle);
+void NotCollisionPosition(GLint n, GLint op_n);
+void CollisionWall(GLint n);
+void CollisionHole(GLint n);
+bool CollisionFloor(GLint n);
 
 /* 影(ステンシル) */
 void FindPlane(GLfloat plane[4], GLfloat v0[3], GLfloat v1[3], GLfloat v2[3]);
@@ -244,6 +263,8 @@ void Qrot(double r[], double q[]);
 /* 入力 */
 void Keyboard(unsigned char key, int x, int y);
 void KeyboardUp(unsigned char key, int x, int y);
+void SpecialFunc(int key, int x, int y);
+void SpecialUpFunc(int key, int x, int y);
 void MouseMotion(int x, int y);
 void MouseOn(int button, int state, int x, int y);
 void MouseWheel(float z);
@@ -257,11 +278,13 @@ GLint main(int argc, char *argv[]) {
 	glutInitWindowPosition(_WINDOW_POSITION_X, _WINDOW_POSITION_Y);	//ウィンドウの位置の指定
 	glutInitWindowSize(_WINDOW_WIDTH, _WINDOW_HEIGHT);				//ウィンドウサイズの指定
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);		//ディスプレイモードの指定(RGBA,デプスバッファ,ダブルバッファ)
-	glutCreateWindow(_WINDOW_TITLE);									//ウィンドウの作成
+	glutCreateWindow(_WINDOW_TITLE);								//ウィンドウの作成
 	glutDisplayFunc(Display);										//描画時に呼び出される関数
 	glutReshapeFunc(Resize);										//リサイズ時に呼び出される関数
 	glutKeyboardFunc(Keyboard);										//キーボード入力時に呼び出される関数
 	glutKeyboardUpFunc(KeyboardUp);									//キーボードが離された時に呼び出される関数
+	glutSpecialFunc(SpecialFunc);									//Specialキーボード入力時に呼び出される関数
+	glutSpecialUpFunc(SpecialUpFunc);								//Specialキーボードが離された時に呼び出される関数
 	glutIgnoreKeyRepeat(GL_TRUE);									//キーの繰り返し入力は無視
 	glutMouseFunc(MouseOn);											//マウスクリック時に呼び出される関数
 	glutMotionFunc(MouseMotion);									//マウスドラッグ解除時に呼び出される関数
@@ -323,9 +346,34 @@ void Initialize(void) {
 void Idle() {
 	glutPostRedisplay(); //glutDisplayFunc()を１回実行する
 
-	if (_SPACE_KEY_PRESSING) {		//継続してaddforceを加える
+	if (space_key_pressing) {		//継続してaddforceを加える
 		if (add_force <= 3500) {
 			add_force += 15;
+		}
+	}
+
+	if (look_x == 0){
+		look_y = look_sign * _LOOK_RADIUS;
+	}else {
+		look_y = look_sign * sqrt((_LOOK_RADIUS*_LOOK_RADIUS) - (look_x*look_x));
+	}
+	if (abs(look_x) >= _LOOK_RADIUS) {
+		_LOOK_PLUS = -_LOOK_PLUS;
+		look_sign = look_sign * -1.0;
+	}
+	if (left_key_pressing) {			//継続して視点移動
+		look_x -= _LOOK_PLUS;
+	} else if (right_key_pressing) {
+		look_x += _LOOK_PLUS;
+	}
+	look_angle = atan2(p[0].y - look_y, p[0].x - look_x);
+
+	for (GLint i = 0; i < _SPHERE_NUMBER; i++) {
+		if (p[i].vx == 0.0 && p[i].vy == 0.0) {
+			enable_play = true;
+		} else {
+			enable_play = false;
+			break;
 		}
 	}
 }
@@ -357,16 +405,18 @@ void Display(void) {
 
 	/* 視点の設定 */
 	gluLookAt(
-		0.0, -300.0, 200.0,	//視点の位置x,y,z;
-		0.0, 0.0, 0.0,	//視界の中心位置の参照点座標x,y,z
+		look_x, look_y, 200.0,	//視点の位置x,y,z;
+		p[0].x, p[0].y, p[0].z,	//視界の中心位置の参照点座標x,y,z
 		0.0, 0.0, 1.0);		//視界の上方向のベクトルx,y,z
 
 	/* 回転 */
 	glMultMatrixd(rt);		//任意の行列を積算する関数
 
 	/* 図形 */
-	DrawSphereOfPlayer();		//球
-	DrawSphereOfTarget();
+	DrawSphereOfPlayer();		//自球
+	DrawSphereOfTarget();		//他球
+
+	DrawCylinder();
 
 	/* 影 */
 	DrawShadow();
@@ -403,25 +453,29 @@ void InitialSphere(void) {
 //----------------------------------------------------
 // Player球体の描画
 //----------------------------------------------------
-int a = 0;
 void DrawSphereOfPlayer(void) {
 	GLint n = 0; //Player ball is p[0]
 	if (p[n].z > -_WALL_S / 2) {				//球体が穴の中に消えていない
-		if (CollisionFloor(n)) {				//球が床上
-			//cout << p[n].vx << "," << p[n].vy << "\n";
+		if (CollisionFloor(n)) {				//球が床
 			CollisionWall(n);					//壁の跳ね返り
-			GLint opponent = CollisionSphere(n);	//球同士の衝突
 
-			if (opponent > 0) {					//どれかの球と衝突している場合
-				NotCollisionPosition(n, opponent);													//コリジョン解除
-				GLdouble angle_n_op = atan2((p[opponent].y - p[n].y), (p[opponent].x - p[n].x));	//角度(n-op)
-				GLdouble angle_op_n = atan2((p[n].y - p[opponent].y), (p[n].x - p[opponent].x));	//角度(op-n)
-				CollisionSphereProcess(n, opponent, angle_n_op);									//衝突後のベクトル(n-op)
-				CollisionSphereProcess(opponent, n, angle_op_n);									//衝突後のベクトル(op-n)
-				p[n].vx = col_p[n].x + col_p[opponent].op_x;										//自球xベクトル
-				p[n].vy = col_p[n].y + col_p[opponent].op_y;										//自球yベクトル
-				p[opponent].vx = col_p[n].op_x + col_p[opponent].x;									//相手球xベクトル
-				p[opponent].vy = col_p[n].op_y + col_p[opponent].y;									//相手球yベクトル
+			if (CollisionSphere(n)) {					//どれかの球と衝突している場合
+				for (GLint i = 0; i < opponent_num.size(); i++) {
+					GLint opponent = opponent_num[i];
+					NotCollisionPosition(n, opponent);													//コリジョン解除
+					GLdouble angle_n_op = atan2((p[opponent].y - p[n].y), (p[opponent].x - p[n].x));	//角度(n-op)
+					GLdouble angle_op_n = atan2((p[n].y - p[opponent].y), (p[n].x - p[opponent].x));	//角度(op-n)
+					CollisionSphereProcess(n, opponent, angle_n_op);									//衝突後のベクトル(n-op)
+					CollisionSphereProcess(opponent, n, angle_op_n);									//衝突後のベクトル(op-n)
+				}
+				for (GLint i = 0; i < opponent_num.size(); i++) {
+					GLint opponent = opponent_num[i];
+
+					p[n].vx = col_p[n].x + col_p[opponent].op_x;										//自球xベクトル
+					p[n].vy = col_p[n].y + col_p[opponent].op_y;										//自球yベクトル
+					p[opponent].vx = col_p[n].op_x + col_p[opponent].x;									//相手球xベクトル
+					p[opponent].vy = col_p[n].op_y + col_p[opponent].y;									//相手球yベクトル
+				}
 			}
 		}
 		else {									//球が穴内部
@@ -446,31 +500,32 @@ void DrawSphereOfPlayer(void) {
 void DrawSphereOfTarget(void) {
 	for (GLint n = 1; n < _SPHERE_NUMBER; n++) {
 		if (p[n].z > -_WALL_S / 2) {				//球体が穴の中に消えていない
-			if (CollisionFloor(n)) {				//球が床上
+			if (CollisionFloor(n)) {				//球が床
 				CollisionWall(n);					//壁の跳ね返り
-				GLint opponent = CollisionSphere(n);	//球同士の衝突
 
-				if (opponent > 0) {					//どれかの球と衝突している場合
-					NotCollisionPosition(n, opponent);													//コリジョン解除
-					GLdouble angle_n_op = atan2((p[opponent].y - p[n].y), (p[opponent].x - p[n].x));	//角度(n-op)
-					GLdouble angle_op_n = atan2((p[n].y - p[opponent].y), (p[n].x - p[opponent].x));	//角度(op-n)
-					CollisionSphereProcess(n, opponent, angle_n_op);									//衝突後のベクトル(n-op)
-					CollisionSphereProcess(opponent, n, angle_op_n);									//衝突後のベクトル(op-n)
-					p[n].vx = col_p[n].x + col_p[opponent].op_x;										//自球xベクトル
-					p[n].vy = col_p[n].y + col_p[opponent].op_y;										//自球yベクトル
-					p[opponent].vx = col_p[n].op_x + col_p[opponent].x;									//相手球xベクトル
-					p[opponent].vy = col_p[n].op_y + col_p[opponent].y;									//相手球yベクトル
+				if (CollisionSphere(n)) {					//どれかの球と衝突している場合
+					for (GLint i = 0; i < opponent_num.size(); i++) {
+						GLint opponent = opponent_num[i];
+						NotCollisionPosition(n, opponent);													//コリジョン解除
+						GLdouble angle_n_op = atan2((p[opponent].y - p[n].y), (p[opponent].x - p[n].x));	//角度(n-op)
+						GLdouble angle_op_n = atan2((p[n].y - p[opponent].y), (p[n].x - p[opponent].x));	//角度(op-n)
+						CollisionSphereProcess(n, opponent, angle_n_op);									//衝突後のベクトル(n-op)
+						CollisionSphereProcess(opponent, n, angle_op_n);									//衝突後のベクトル(op-n)
+					}
+					for (GLint i = 0; i < opponent_num.size(); i++) {
+						GLint opponent = opponent_num[i];
+
+						p[n].vx = col_p[n].x + col_p[opponent].op_x;										//自球xベクトル
+						p[n].vy = col_p[n].y + col_p[opponent].op_y;										//自球yベクトル
+						p[opponent].vx = col_p[n].op_x + col_p[opponent].x;									//相手球xベクトル
+						p[opponent].vy = col_p[n].op_y + col_p[opponent].y;									//相手球yベクトル
+					}
 				}
 			}
 			else {									//球が穴内部
 				CollisionHole(n);					//穴内部コリジョン
 			}
-
-			//cout << "1:" << p[n].x << "," << p[n].y << "," << p[n].vx << "," << p[n].vy << "\n";
-
 			SphereAddForce(n);						//球体移動演算
-
-			//cout << "2:" << p[n].x << "," << p[n].y << "," << p[n].vx << "," << p[n].vy << "\n";
 
 			glPushMatrix();
 			glMaterialfv(GL_FRONT, GL_AMBIENT, _MS_RUBY.ambient);
@@ -480,6 +535,8 @@ void DrawSphereOfTarget(void) {
 			glTranslated(p[n].x, p[n].y, p[n].z);	//平行移動値の設定
 			glutSolidSphere(_SPHERE_RADIUS, 20, 20);	//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
 			glPopMatrix();
+		} else {
+			p[n].vx = p[n].vy = 0.0;
 		}
 	}
 }
@@ -562,6 +619,56 @@ void DrawFloor(void) {
 }
 
 //----------------------------------------------------
+// キューの描画
+//----------------------------------------------------
+GLdouble cylinder_pull = 0.0;
+void DrawCylinder(void)
+{
+	glPushMatrix();
+	glTranslated(p[0].x, p[0].y, 18.0);
+	glRotated(look_angle*180/M_PI+90, 0.0, 0.0, 1.0);
+	if (space_key_pressing) {
+		cylinder_pull += 0.1;
+	} else {
+		cylinder_pull = 0.0;
+	}
+	glTranslated(0, 52 + cylinder_pull, 0.0);
+	glRotated(15, 1.0, 0.0, .0);
+	/*上面 */
+	if (enable_play) {
+		glCullFace(GL_FRONT);
+		glNormal3d(0.0, 1.0, 0.0);
+		glBegin(GL_POLYGON);
+		for (double i = 0; i < _CYLINDER_SIDES; i++) {
+			double t = M_PI * 2 / _CYLINDER_SIDES * (double)i;
+			glVertex3d(_CYLINDER_RADIUS * cos(t), _CYLINDER_HEIGHT, _CYLINDER_RADIUS * sin(t));
+		}
+		glEnd();
+		/* 側面 */
+		glCullFace(GL_BACK);
+		glBegin(GL_QUAD_STRIP);
+		for (double i = 0; i <= _CYLINDER_SIDES; i = i + 1) {
+			double t = i * 2 * M_PI / _CYLINDER_SIDES;
+			glNormal3f((GLfloat)cos(t), 0.0, (GLfloat)sin(t));
+			glVertex3f((GLfloat)(_CYLINDER_RADIUS*cos(t)), -_CYLINDER_HEIGHT, (GLfloat)(_CYLINDER_RADIUS*sin(t)));
+			glVertex3f((GLfloat)(_CYLINDER_RADIUS*cos(t)), _CYLINDER_HEIGHT, (GLfloat)(_CYLINDER_RADIUS*sin(t)));
+		}
+		glEnd();
+		/* 下面 */
+		glCullFace(GL_FRONT);
+		glNormal3d(0.0, -1.0, 0.0);
+		glBegin(GL_POLYGON);
+		for (double i = _CYLINDER_SIDES; i >= 0; --i) {
+			double t = M_PI * 2 / _CYLINDER_SIDES * (double)i;
+			glVertex3d(_CYLINDER_RADIUS * cos(t), -_CYLINDER_HEIGHT, _CYLINDER_RADIUS * sin(t));
+		}
+		glEnd();
+		glCullFace(GL_BACK);
+	}
+	glPopMatrix();
+}
+
+//----------------------------------------------------
 // 球体の移動演算
 //----------------------------------------------------
 void SphereAddForce(GLint n) {
@@ -581,24 +688,29 @@ void SphereAddForce(GLint n) {
 //----------------------------------------------------
 // 球体同士の当たり判定
 //----------------------------------------------------
-GLint CollisionSphere(GLint n) {
+bool CollisionSphere(GLint n) {
+	bool collision_bool = false;
+	std::vector<GLint> opponent_num_reset;
+	opponent_num = opponent_num_reset;
+	col_p[n].x = 0;
+	col_p[n].y = 0;
+	col_p[n].op_x = 0;
+	col_p[n].op_y = 0;
 	for (GLint i = n+1; i < _SPHERE_NUMBER; i++) {
-		if (abs((p[n].x-p[i].x)*(p[n].x - p[i].x) + 
+		if ((p[n].x-p[i].x)*(p[n].x - p[i].x) + 
 			(p[n].y-p[i].y)*(p[n].y - p[i].y) + 
-				(p[n].z-p[i].z)*(p[n].z - p[i].z)) 
+				(p[n].z-p[i].z)*(p[n].z - p[i].z)
 					<= (2*_SPHERE_RADIUS) * (2*_SPHERE_RADIUS)) {	//二つの球の距離が直径より小さい時
-			col_p[n].x = 0;
-			col_p[n].y = 0;
-			col_p[n].op_x = 0;
-			col_p[n].op_y = 0;
 			col_p[i].x = 0;
 			col_p[i].y = 0;
 			col_p[i].op_x = 0;
 			col_p[i].op_y = 0;
-			return i;
+			opponent_num.push_back(i);
+			collision_bool = true;
 		}
 	}
-	return -1;
+
+	return collision_bool;
 }
 
 //----------------------------------------------------
@@ -623,10 +735,10 @@ void CollisionSphereProcess(GLint n, GLint op_n, GLdouble angle) {			//n:自球, o
 		after_nvy = after_nv * sin(angle + M_PI / 2);
 	}	
 
-	col_p[n].x    += after_nvx;
-	col_p[n].y    += after_nvy;
-	col_p[n].op_x += after_opvx;
-	col_p[n].op_y += after_opvy;
+	col_p[n].x    = after_nvx;
+	col_p[n].y    = after_nvy;
+	col_p[n].op_x = after_opvx;
+	col_p[n].op_y = after_opvy;
 }
 
 //----------------------------------------------------
@@ -822,7 +934,7 @@ void DrawShadow(void) {
 void Keyboard(unsigned char key, int x, int y) {
 	switch (key) {
 	case '\040':	//SP
-		_SPACE_KEY_PRESSING = true;
+		space_key_pressing = true;
 		break;
 	case '\033':	//ESCのASCIIコード
 		exit(0);
@@ -838,9 +950,40 @@ void Keyboard(unsigned char key, int x, int y) {
 void KeyboardUp(unsigned char key, int x, int y) {
 	switch (key) {
 	case '\040':	//SP
-		_SPACE_KEY_PRESSING = false;
-		p[0].vy += 2 * add_force * _ADD_FORCE_DT;
+		space_key_pressing = false;
+		GLdouble force_x = (p[0].x - look_x) * _ADD_FORCE_DT;
+		GLdouble force_y = (p[0].y - look_y) * _ADD_FORCE_DT;
+		p[0].vx += force_x * add_force * _ADD_FORCE_DT;
+		p[0].vy += force_y * add_force * _ADD_FORCE_DT;
 		add_force = 0.0;
+		break;
+	}
+}
+
+//----------------------------------------------------
+// Specialキーボード入力時に呼び出される関数
+//----------------------------------------------------
+void SpecialFunc(int key, int x, int y) {
+	switch (key) {
+	case GLUT_KEY_LEFT:	//←
+		left_key_pressing = true;
+		break;
+	case GLUT_KEY_RIGHT: //→
+		right_key_pressing = true;
+		break;	
+	}
+}
+
+//----------------------------------------------------
+// Specialキーボードが離された時に呼び出される関数
+//----------------------------------------------------
+void SpecialUpFunc(int key, int x, int y) {
+	switch (key) {
+	case GLUT_KEY_LEFT:	//←
+		left_key_pressing = false;
+		break;
+	case GLUT_KEY_RIGHT: //→
+		right_key_pressing = false;
 		break;
 	}
 }
