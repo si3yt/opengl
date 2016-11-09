@@ -1,22 +1,2 @@
 ﻿  billiards_main_script.cpp
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(47): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(47): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(52): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(52): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(55): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(55): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(56): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(56): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(57): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(57): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(58): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(58): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(78): warning C4091: 'typedef ': ignored on left of '_QUADS_VERTEX' when no variable is declared
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(176): warning C4091: 'typedef ': ignored on left of '_FACE_NORMAL' when no variable is declared
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(463): warning C4018: '<': signed/unsigned mismatch
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(471): warning C4018: '<': signed/unsigned mismatch
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(507): warning C4018: '<': signed/unsigned mismatch
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(515): warning C4018: '<': signed/unsigned mismatch
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(653): warning C4244: 'argument': conversion from 'GLdouble' to 'GLfloat', possible loss of data
-c:\users\170283u\desktop\opengl\billiards_opengl\billiards_main_script.cpp(654): warning C4244: 'argument': conversion from 'GLdouble' to 'GLfloat', possible loss of data
   billiards_opengl.vcxproj -> C:\Users\170283u\Desktop\opengl\billiards_opengl\Debug\billiards_opengl.exe

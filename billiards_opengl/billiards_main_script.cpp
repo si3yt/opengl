@@ -41,24 +41,24 @@ struct _MATERIAL_STRUCT {							// material用構造体
 	GLfloat shininess;		// 光沢
 };
 _MATERIAL_STRUCT _MS_WHITE_PLASTIC = {				//プラスチック(白)
-	{ 0.0,  0.0,  0.0,  1.0 },
-	{ 0.55, 0.55, 0.55, 1.0 },
-	{ 0.70, 0.70, 0.70, 1.0 },
-	32 };
+	{ 0.0f,  0.0f,  0.0f,  1.0f },
+	{ 0.55f, 0.55f, 0.55f, 1.0f },
+	{ 0.70f, 0.70f, 0.70f, 1.0f },
+	32.0f };
 _MATERIAL_STRUCT _MS_RUBY = {						// ruby(ルビー)
-	{ 0.1745,   0.01175,  0.01175,   1.0 },
-	{ 0.61424,  0.04136,  0.04136,   1.0 },
-	{ 0.727811, 0.626959, 0.626959,  1.0 },
-	76.8 };
+	{ 0.1745f,   0.01175f,  0.01175f,   1.0f },
+	{ 0.61424f,  0.04136f,  0.04136f,   1.0f },
+	{ 0.727811f, 0.626959f, 0.626959f,  1.0f },
+	76.8f };
 
 /* 色 */
-GLfloat _RED[]     = { 0.8, 0.2, 0.2, 1.0 };	//赤色
-GLfloat _GREEN[]   = { 0.2, 0.8, 0.2, 1.0 };	//緑色
-GLfloat _BLUE[]    = { 0.2, 0.2, 0.8, 1.0 };	//青色
-GLfloat _YELLOW[]  = { 0.8, 0.8, 0.2, 1.0 };	//黄色
-GLfloat _WHITE[]   = { 1.0, 1.0, 1.0, 1.0 };	//白色
-GLfloat _BLACK[]   = { 0.0, 0.0, 0.0, 1.0 };	//黒色
-GLfloat _SHININESS = 30.0;						//光沢の強さ
+GLfloat _RED[]     = { 0.8f, 0.2f, 0.2f, 1.0f };	//赤色
+GLfloat _GREEN[]   = { 0.2f, 0.8f, 0.2f, 1.0f };	//緑色
+GLfloat _BLUE[]    = { 0.2f, 0.2f, 0.8f, 1.0f };	//青色
+GLfloat _YELLOW[]  = { 0.8f, 0.8f, 0.2f, 1.0f };	//黄色
+GLfloat _WHITE[]   = { 1.0f, 1.0f, 1.0f, 1.0f };	//白色
+GLfloat _BLACK[]   = { 0.0f, 0.0f, 0.0f, 1.0f };	//黒色
+GLfloat _SHININESS = 30.0f;						//光沢の強さ
 
 /* 光 */
 static GLfloat _LIGHT_POSITION_0[] = { 0.0, 0.0, 150.0, 1.0 }; //光源0の座標
@@ -75,8 +75,8 @@ typedef struct _QUADS_VERTEX {
 	GLfloat v1[3];
 	GLfloat v2[3];
 	GLfloat v3[3];
-};
-static _QUADS_VERTEX _FLOOR_VER = {		//影描画用床設定
+}QUADS_VERTEX;
+static QUADS_VERTEX _FLOOR_VER = {		//影描画用床設定
 	{ _FLOOR_S,  _FLOOR_S,  0.0f },
 	{ -_FLOOR_S, _FLOOR_S,  0.0f },
 	{ -_FLOOR_S, -_FLOOR_S, 0.0f },
@@ -173,8 +173,8 @@ typedef struct _FACE_NORMAL {
 	GLfloat n3[3];
 	GLfloat n4[3];
 	GLfloat n5[3];
-};
-static _FACE_NORMAL _QUADS_FACE_NOMAL = {	//面の法線ベクトル
+}FACE_NORMAL;
+static FACE_NORMAL _QUADS_FACE_NOMAL = {	//面の法線ベクトル
 	{ 0.0,  0.0,  -1.0 },
 	{ 1.0,  0.0,  0.0  },
 	{ 0.0,  0.0,  1.0  },
@@ -208,20 +208,22 @@ std::vector<GLint> opponent_num;			//コリジョン
 bool enable_play = true;					//プレイ可能
 
 /* キュー */
-static GLdouble _CYLINDER_RADIUS = 3.0;
-static GLdouble _CYLINDER_HEIGHT = 50.0;
-static GLint	_CYLINDER_SIDES  = 10;
+static GLfloat _CYLINDER_RADIUS = 3.0f;
+static GLfloat _CYLINDER_HEIGHT = 50.0f;
+static GLint   _CYLINDER_SIDES  = 10;
 
 /* 入力 */
 bool space_key_pressing = false;			//スペースキー長押し検知
 bool left_key_pressing  = false;			//LEFTキー長押し検知
 bool right_key_pressing = false;			//RIGHTキー長押し検知
-GLdouble look_x		  = 0.0;
-GLdouble look_y		  = 0.0;
-static GLdouble _LOOK_PLUS   = 5.0;
-GLdouble look_sign    = -1.0;
+
+/* 視点 */
+static GLdouble _LOOK_PLUS   = 0.03;
 static GLdouble _LOOK_RADIUS = 300.0;
-GLdouble look_angle   = 0.0;
+GLdouble look_x		= 0.0;
+GLdouble look_y		= 0.0;
+GLdouble look_theta = 0.0;
+GLdouble look_angle = 0.0;
 
 //----------------------------------------------------
 // 関数プロトタイプ（後に呼び出す関数名と引数の宣言）
@@ -352,22 +354,17 @@ void Idle() {
 		}
 	}
 
-	if (look_x == 0){
-		look_y = look_sign * _LOOK_RADIUS;
-	}else {
-		look_y = look_sign * sqrt((_LOOK_RADIUS*_LOOK_RADIUS) - (look_x*look_x));
+	if (left_key_pressing) {
+		look_theta = look_theta - _LOOK_PLUS;
 	}
-	if (abs(look_x) >= _LOOK_RADIUS) {
-		_LOOK_PLUS = -_LOOK_PLUS;
-		look_sign = look_sign * -1.0;
+	else if (right_key_pressing) {
+		look_theta = look_theta + _LOOK_PLUS;
 	}
-	if (left_key_pressing) {			//継続して視点移動
-		look_x -= _LOOK_PLUS;
-	} else if (right_key_pressing) {
-		look_x += _LOOK_PLUS;
-	}
+	look_x = _LOOK_RADIUS * sin(look_theta);
+	look_y = _LOOK_RADIUS * -cos(look_theta);
+	
 	look_angle = atan2(p[0].y - look_y, p[0].x - look_x);
-
+	
 	for (GLint i = 0; i < _SPHERE_NUMBER; i++) {
 		if (p[i].vx == 0.0 && p[i].vy == 0.0) {
 			enable_play = true;
@@ -413,13 +410,13 @@ void Display(void) {
 	glMultMatrixd(rt);		//任意の行列を積算する関数
 
 	/* 図形 */
+	DrawShadow();
 	DrawSphereOfPlayer();		//自球
 	DrawSphereOfTarget();		//他球
+	DrawCylinder();				//キュー
 
-	DrawCylinder();
+	DrawWall();
 
-	/* 影 */
-	DrawShadow();
 
 	glPopMatrix();
 
@@ -444,7 +441,7 @@ void InitialSphere(void) {
 	p[3].x = _SPHERE_RADIUS		 + 1.0;	p[3].y = 10.0 + 2 * _SPHERE_RADIUS;
 	p[4].x = -_SPHERE_RADIUS * 2 - 1.0;	p[4].y = 10.0 + 4 * _SPHERE_RADIUS;
 	p[5].x = 0.0;						p[5].y = 10.0 + 4 * _SPHERE_RADIUS;
-	p[6].x = _SPHERE_RADIUS * 2  + 1.0;	p[6].y = 10.0 + 4 * _SPHERE_RADIUS;
+	p[6].x = _SPHERE_RADIUS  * 2 + 1.0;	p[6].y = 10.0 + 4 * _SPHERE_RADIUS;
 	p[7].x = -_SPHERE_RADIUS     - 1.0;	p[7].y = 10.0 + 6 * _SPHERE_RADIUS;
 	p[8].x = _SPHERE_RADIUS      + 1.0;	p[8].y = 10.0 + 6 * _SPHERE_RADIUS;
 	p[9].x = 0.0;						p[9].y = 10.0 + 8 * _SPHERE_RADIUS;
@@ -460,7 +457,7 @@ void DrawSphereOfPlayer(void) {
 			CollisionWall(n);					//壁の跳ね返り
 
 			if (CollisionSphere(n)) {					//どれかの球と衝突している場合
-				for (GLint i = 0; i < opponent_num.size(); i++) {
+				for (GLint i = 0, ilen = opponent_num.size(); i < ilen; i++) {
 					GLint opponent = opponent_num[i];
 					NotCollisionPosition(n, opponent);													//コリジョン解除
 					GLdouble angle_n_op = atan2((p[opponent].y - p[n].y), (p[opponent].x - p[n].x));	//角度(n-op)
@@ -468,7 +465,7 @@ void DrawSphereOfPlayer(void) {
 					CollisionSphereProcess(n, opponent, angle_n_op);									//衝突後のベクトル(n-op)
 					CollisionSphereProcess(opponent, n, angle_op_n);									//衝突後のベクトル(op-n)
 				}
-				for (GLint i = 0; i < opponent_num.size(); i++) {
+				for (GLint i = 0, ilen = opponent_num.size(); i < ilen; i++) {
 					GLint opponent = opponent_num[i];
 
 					p[n].vx = col_p[n].x + col_p[opponent].op_x;										//自球xベクトル
@@ -504,7 +501,7 @@ void DrawSphereOfTarget(void) {
 				CollisionWall(n);					//壁の跳ね返り
 
 				if (CollisionSphere(n)) {					//どれかの球と衝突している場合
-					for (GLint i = 0; i < opponent_num.size(); i++) {
+					for (GLint i = 0, ilen = opponent_num.size(); i < ilen; i++) {
 						GLint opponent = opponent_num[i];
 						NotCollisionPosition(n, opponent);													//コリジョン解除
 						GLdouble angle_n_op = atan2((p[opponent].y - p[n].y), (p[opponent].x - p[n].x));	//角度(n-op)
@@ -512,7 +509,7 @@ void DrawSphereOfTarget(void) {
 						CollisionSphereProcess(n, opponent, angle_n_op);									//衝突後のベクトル(n-op)
 						CollisionSphereProcess(opponent, n, angle_op_n);									//衝突後のベクトル(op-n)
 					}
-					for (GLint i = 0; i < opponent_num.size(); i++) {
+					for (GLint i = 0, ilen = opponent_num.size(); i < ilen; i++) {
 						GLint opponent = opponent_num[i];
 
 						p[n].vx = col_p[n].x + col_p[opponent].op_x;										//自球xベクトル
@@ -546,7 +543,6 @@ void DrawSphereOfTarget(void) {
 //----------------------------------------------------
 void DrawTable(void) {
 	glDisable(GL_LIGHTING);
-	DrawWall();
 	DrawHole();
 	DrawFloor();
 	glEnable(GL_LIGHTING);
@@ -555,6 +551,7 @@ void DrawTable(void) {
 // 壁(直方体)の描画
 //----------------------------------------------------
 void DrawWall(void) {
+	glDisable(GL_LIGHTING);
 	glPushMatrix();
 	glBegin(GL_QUADS);							//GL_QUADS：4点組の四角形
 	glColor4fv(_RED);
@@ -586,6 +583,7 @@ void DrawWall(void) {
 	}
 	glEnd();
 	glPopMatrix();
+	glEnable(GL_LIGHTING);
 }
 //----------------------------------------------------
 // 穴(下床)の描画
@@ -626,7 +624,7 @@ void DrawCylinder(void)
 {
 	glPushMatrix();
 	glTranslated(p[0].x, p[0].y, 18.0);
-	glRotated(look_angle*180/M_PI+90, 0.0, 0.0, 1.0);
+	glRotated(look_angle * 180 / M_PI + 90, 0.0, 0.0, 1.0);
 	if (space_key_pressing) {
 		cylinder_pull += 0.1;
 	} else {
@@ -636,16 +634,14 @@ void DrawCylinder(void)
 	glRotated(15, 1.0, 0.0, .0);
 	/*上面 */
 	if (enable_play) {
-		glCullFace(GL_FRONT);
 		glNormal3d(0.0, 1.0, 0.0);
 		glBegin(GL_POLYGON);
-		for (double i = 0; i < _CYLINDER_SIDES; i++) {
+		for (double i = _CYLINDER_SIDES; i >= 0; --i) {
 			double t = M_PI * 2 / _CYLINDER_SIDES * (double)i;
 			glVertex3d(_CYLINDER_RADIUS * cos(t), _CYLINDER_HEIGHT, _CYLINDER_RADIUS * sin(t));
 		}
 		glEnd();
 		/* 側面 */
-		glCullFace(GL_BACK);
 		glBegin(GL_QUAD_STRIP);
 		for (double i = 0; i <= _CYLINDER_SIDES; i = i + 1) {
 			double t = i * 2 * M_PI / _CYLINDER_SIDES;
@@ -655,10 +651,9 @@ void DrawCylinder(void)
 		}
 		glEnd();
 		/* 下面 */
-		glCullFace(GL_FRONT);
 		glNormal3d(0.0, -1.0, 0.0);
 		glBegin(GL_POLYGON);
-		for (double i = _CYLINDER_SIDES; i >= 0; --i) {
+		for (double i = 0; i < _CYLINDER_SIDES; i++) {
 			double t = M_PI * 2 / _CYLINDER_SIDES * (double)i;
 			glVertex3d(_CYLINDER_RADIUS * cos(t), -_CYLINDER_HEIGHT, _CYLINDER_RADIUS * sin(t));
 		}
