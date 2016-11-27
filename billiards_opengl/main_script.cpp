@@ -1,144 +1,151 @@
-#include <gl/glut.h>
-#include<iostream>
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <direct.h>
+#include <time.h>
+#include <vector>
+#include <GL/glut.h>
+#include "billiards_header.h"
+using namespace std;
 
-#define MAXPOINTS 100      /* 記憶する点の数　　 */
-GLint point[MAXPOINTS][2]; /* 座標を記憶する配列 */
-int pointnum = 0;          /* 記憶した座標の数　 */
-int rubberband = 0;        /* ラバーバンドの消去 */
+GLint win_pos_x = _WINDOW_POSITION_X;
+GLint win_pos_y = _WINDOW_POSITION_Y;
+GLint win_width = _WINDOW_WIDTH;
+GLint win_height = _WINDOW_HEIGHT;
+char* win_title = _WINDOW_TITLE;
 
+GLfloat light_pos_0[] = _LIGHT_POSITION_0;
+
+/* ディスプレイリスト */
+GLuint list_number;
+
+//----------------------------------------------------
+// 関数プロトタイプ（後に呼び出す関数名と引数の宣言）
+//----------------------------------------------------
+void initialize(void);
+void idle(void);
+void display(void);
+void resize(int w, int h);
+
+GLint main(int argc, char *argv[]) {
+	srand((unsigned)time(NULL));								//乱数の発生
+	glutInit(&argc, argv);										//環境の初期化
+	glutInitWindowPosition(win_pos_x, win_pos_y);				//ウィンドウの位置の指定
+	glutInitWindowSize(win_width, win_height);					//ウィンドウサイズの指定
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);	//ディスプレイモードの指定(RGBA,デプスバッファ,ダブルバッファ)
+	glutCreateWindow(win_title);								//ウィンドウの作成
+	glutDisplayFunc(display);									//描画時に呼び出される関数
+	glutReshapeFunc(resize);									//リサイズ時に呼び出される関数
+	//glutKeyboardFunc(Keyboard);										//キーボード入力時に呼び出される関数
+	//glutKeyboardUpFunc(KeyboardUp);									//キーボードが離された時に呼び出される関数
+	//glutSpecialFunc(SpecialFunc);									//Specialキーボード入力時に呼び出される関数
+	//glutSpecialUpFunc(SpecialUpFunc);								//Specialキーボードが離された時に呼び出される関数
+	//glutIgnoreKeyRepeat(GL_TRUE);									//キーの繰り返し入力は無視
+	//glutMouseFunc(MouseOn);											//マウスクリック時に呼び出される関数
+	//glutMotionFunc(MouseMotion);									//マウスドラッグ解除時に呼び出される関数
+
+	glutIdleFunc(idle);											//プログラムアイドル状態時に呼び出される関数
+	initialize();												//初期設定の関数を呼び出す
+	glutMainLoop();												//イベント待ち受け状態(無限ループ)
+	return 0;
+}
+
+void idle() {
+	glutPostRedisplay(); //glutDisplayFunc()を１回実行する
+}
 
 void display(void) {
-	int i;
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //バッファの消去
 
-	glClear(GL_COLOR_BUFFER_BIT);
+	glPushMatrix();
 
-	/* 記録したデータで線を描く */
-	if (pointnum > 1) {
-		glColor3d(1.0, 1.0, 1.0);
-		glBegin(GL_LINES);
-		for (i = 0; i < pointnum; ++i) {
-			glVertex2iv(point[i]);
-		}
-		glEnd();
-	}
-	// 未実行命令すべての実行
-	glFlush();
+	/* 視点の設定 */
+	gluLookAt(
+		200,200,200,//look_x, look_y, 200.0,	//視点の位置x,y,z;
+		0,0,0,//p[0].x, p[0].y, p[0].z,	//視界の中心位置の参照点座標x,y,z
+		0.0, 0.0, 1.0);		//視界の上方向のベクトルx,y,z
+
+							/* 回転 */
+	//glMultMatrixd(rt);		//任意の行列を積算する関数
+
+							/* 図形 */
+	//DrawShadow();
+	//DrawSphereOfPlayer();		//自球
+	//DrawSphereOfTarget();		//他球
+	//DrawCylinder();				//キュー
+
+	//DrawWall();
+	
+
+	glPopMatrix();
+
+	glutSwapBuffers(); //glutInitDisplayMode(GLUT_DOUBLE)でダブルバッファリングを利用可
 }
 
-void resize(int w, int h)
-{
-	// ウィンドウ全体をビューポートにする
-	glViewport(0, 0, w, h);
-	// 変換行列の初期化
-	glLoadIdentity();
-	/* スクリーン上の座標系をマウスの座標系に一致させる */
-	glOrtho(-0.5, (GLdouble)w - 0.5, (GLdouble)h - 0.5, -0.5, -1.0, 1.0);
+//----------------------------------------------------
+// リサイズ関数
+//----------------------------------------------------
+void resize(int w, int h) {
+	glViewport(0, 0, w, h);	//ビューポートの設定
+
+	/* 透視変換行列の設定 */
+	glMatrixMode(GL_PROJECTION);	//行列モードの設定GL_PROJECTION : 透視変換行列の設定、GL_MODELVIEW：モデルビュー変換行列）
+	glLoadIdentity();															//行列の初期化(変換行列に単位行列を設定)
+	gluPerspective(30.0, (double)win_width / (double)win_height, 0.1, 1000.0);	//透視投影法の視体積
+	//gluPerspactive(画角, アスペクト比, 奥行き前, 奥行き後ろ);
+
+	/* モデルビュー変換行列の設定 */
+	glMatrixMode(GL_MODELVIEW);						//行列モードの設定（GL_PROJECTION : 透視変換行列の設定、GL_MODELVIEW：モデルビュー変換行列）
+	glLoadIdentity();								//行列の初期化(変換行列に単位行列を設定)
 }
 
-void mouse(int button, int state, int x, int y)
-{
-	switch (button) {
-	case GLUT_LEFT_BUTTON:
-		/* ボタンを操作した位置を記録する */
-		point[pointnum][0] = x;
-		point[pointnum][1] = y;
-		if (state == GLUT_UP) {
-			/* ボタンを押した位置から離した位置まで線を引く */
-			glColor3d(1.0, 1.0, 1.0);
-			glBegin(GL_LINES);
-			glVertex2iv(point[pointnum - 1]); /* 一つ前は押した位置　 */
-			glVertex2iv(point[pointnum]);     /* 今の位置は離した位置 */
-			glEnd();
-			glFlush();
+//----------------------------------------------------
+// 初期設定の関数
+//----------------------------------------------------
+void initialize(void) {
+	glClearColor(1.0, 1.0, 1.0, 1.0);	//背景色(RGBA 0.0~1.0)
+	glEnable(GL_DEPTH_TEST);			//デプスバッファを使用：glutInitDisplayMode() で GLUT_DEPTH を指定する
+	glDepthFunc(GL_LEQUAL);				//深度バッファと新しいピクセル地の深度の比較関数(GL_LEQUAL：格納深度以下であれば通過)
+	glClearDepth(1.0);
 
-			/* 始点ではラバーバンドを描いていないので消さない */
-			rubberband = 0;
-		}
-		if (pointnum < MAXPOINTS - 1) ++pointnum;
-		break;
-	case GLUT_MIDDLE_BUTTON:
-		break;
-	case GLUT_RIGHT_BUTTON:
-		break;
-	default:
-		break;
-	}
-}
+	/*
+	FindPlane(floor_planar,				//ステンシルを張るための床を見つける
+		_FLOOR_VER.v0,
+		_FLOOR_VER.v1,
+		_FLOOR_VER.v2);
+	*/
+	/* 光源の設定 */
+	glEnable(GL_LIGHTING);									//陰影ON
+	glEnable(GL_LIGHT0);									//光源0を利用
+	glLightfv(GL_LIGHT0, GL_POSITION, light_pos_0);	//光源0の位置
 
-void motion(int x, int y)
-{
-	static GLint savepoint[2]; /* 以前のラバーバンドの端点 */
+															/* ディスプレイリストを作成 */
+	list_number = glGenLists(1);
+	glNewList(list_number, GL_COMPILE);	//コンパイルのみ
+	glEndList();
 
-	/* 論理演算機能 ON */
-	glEnable(GL_COLOR_LOGIC_OP);
-	glLogicOp(GL_INVERT);
+	/* マウスポインタ位置のウィンドウ内の相対的位置への換算用 */
+	//sx = 1.0 / (double)512;
+	//sy = 1.0 / (double)512;
 
-	glBegin(GL_LINES);
-	if (rubberband) {
-		/* 以前のラバーバンドを消す */
-		glVertex2iv(point[pointnum - 1]);
-		glVertex2iv(savepoint);
-	}
-	/* 新しいラバーバンドを描く */
-	glVertex2iv(point[pointnum - 1]);
-	glVertex2i(x, y);
-	glEnd();
+	/* 回転行列の初期化 */
+	//Qrot(rt, cq);
 
-	glFlush();
+	/* ステンシルバッファクリア値の設定 */
+	//glClearStencil(0);
+	//glCullFace(GL_BACK);
+	//glEnable(GL_CULL_FACE);
+	//glEnable(GL_AUTO_NORMAL);
+	//glEnable(GL_NORMALIZE);
 
-	/* 論理演算機能 OFF */
-	glLogicOp(GL_COPY);
-	glDisable(GL_COLOR_LOGIC_OP);
+	/* 平面射影行列の算出 */
+	//ShadowMatrix(pM, floor_planar,light_pos_0);
 
-	/* 今描いたラバーバンドの端点を保存 */
-	savepoint[0] = x;
-	savepoint[1] = y;
-
-	/* 今描いたラバーバンドは次のタイミングで消す */
-	rubberband = 1;
-}
-
-void keyboard(unsigned char key, int x, int y)
-{
-	switch (key) {
-	case '\033':  /* '\033' は ESC の ASCII コード */
-		exit(0);
-	default:
-		break;
-	}
-}
-
-// 初期設定用関数
-void init(void) {
-	/* 画面を塗りつぶす色
-	 * GLclampf型:0~1の値 */
-	glClearColor(0.0, 0.0, 0.0, 1.0);
-}
-
-int main(int argc, char *argv[]) {
-	glutInitWindowPosition(100, 100);
-	glutInitWindowSize(320, 240);
-	// GLUTおよびOpenGL環境の初期化
-	glutInit(&argc, argv);
-	// ディスプレイの表示モード
-	glutInitDisplayMode(GLUT_RGBA);
-	// ウィンドウ作成
-	glutCreateWindow(argv[0]);
-	// 図形描画用関数
-	glutDisplayFunc(display);
-	// リサイズの実行
-	glutReshapeFunc(resize);
-	// マウスUpDownイベント
-	glutMouseFunc(mouse);
-	// マウスドラッグイベント
-	glutMotionFunc(motion);
-	// キーボード入力イベント
-	glutKeyboardFunc(keyboard);
-	init();
-	// イベント待ち受け状態(無限ループ)
-	glutMainLoop();
-
-	return 0;
+	/* 物体配置 */
+	//InitialSphere();
+	
 }

@@ -149,7 +149,12 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="billiards_main_script.cpp" />
+    <ClCompile Include="billiards_script.cpp" />
+    <ClCompile Include="box_script.cpp" />
+    <ClCompile Include="main_script.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="billiards_header.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
