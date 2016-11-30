@@ -149,9 +149,15 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="billiards_script.cpp" />
+    <ClCompile Include="ball_script.cpp" />
     <ClCompile Include="box_script.cpp" />
+    <ClCompile Include="floor_script.cpp" />
+    <ClCompile Include="que_script.cpp" />
+    <ClCompile Include="sight_script.cpp" />
     <ClCompile Include="main_script.cpp" />
+    <ClCompile Include="object_control_script.cpp" />
+    <ClCompile Include="table_script.cpp" />
+    <ClCompile Include="timer_script.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="billiards_header.h" />
