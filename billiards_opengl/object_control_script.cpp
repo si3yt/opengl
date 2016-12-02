@@ -46,18 +46,47 @@ void ObjectControl::draw() {
 	sight.set_lookat();
 
 	for (size_t i = 0; i < array_length(balls); i++) {
-		balls[i].move();
-		balls[i].draw();
+		if (!collision.bottom_floor(balls[i].pos)) {
+			GLdouble gravity_force[] = { 0.0, 0.0, _GRAVITY };
+			GLdouble *collision_floor_vec;
+			collision_floor_vec = collision.floor(balls[i], gravity_force);
+			balls[i].add_force(collision_floor_vec);
+			GLdouble *collision_wall_vec, cwv_array[3];
+			collision_wall_vec = collision.wall(balls[i], cwv_array);
+			balls[i].add_force(collision_wall_vec);
+			if (collision_floor_vec[2] == _GRAVITY) {
+				GLdouble *collision_hole_vec, chv_array[3];
+				collision_hole_vec = collision.hole(balls[i], chv_array);
+				balls[i].add_force(collision_hole_vec);
+			}
+			for (size_t j = i + 1; j < array_length(balls); j++) {
+				if (collision.ball_judge(balls[i].pos, balls[j].pos)) {
+					GLdouble *ball_not_colision_pos, bncp_array[3];
+					ball_not_colision_pos = collision.ball_not_collision_pos(balls[i], balls[j], bncp_array);
+					balls[i].move_pos(ball_not_colision_pos);
+					GLdouble **collision_ball_propaty, cbp_array_two[2][3], *cbp_array_one[3];
+					for (size_t k = 0; k < 2; k++) cbp_array_one[k] = cbp_array_two[k];
+					collision_ball_propaty = collision.ball(balls[i], balls[j], cbp_array_one);
+					balls[i].add_force(collision_ball_propaty[0]);
+					balls[j].add_force(collision_ball_propaty[1]);
+				}
+			}
+			balls[i].move_vec();
+			balls[i].draw();
+		}
 	}
 	table.draw();
-	if (key_space) {
-		que.pull += _QUE_ADD_PULL;
+	if (ball_all_stop()) {
+		sight.set_center(balls[0].pos);
+		if (key_space) {
+			que.pull += _QUE_ADD_PULL;
+		}
+		else {
+			que.pull = 0.0;
+		}
+		que.angle = sight.get_angle();
+		que.draw(balls[0].pos);
 	}
-	else {
-		que.pull = 0.0;
-	}
-	que.angle = sight.get_angle();
-	que.draw(balls[0].pos);
 }
 
 void ObjectControl::push_for_space(GLdouble time) {
@@ -65,7 +94,18 @@ void ObjectControl::push_for_space(GLdouble time) {
 	if (push > _PUSH_SPACE_LIMIT) {
 		push = _PUSH_SPACE_LIMIT;
 	}
-	balls[0].vec[0] += (balls[0].pos[0] - sight.pos[0]) * push;
-	balls[0].vec[1] += (balls[0].pos[1] - sight.pos[1]) * push;
+	GLdouble vec_x = (balls[0].pos[0] - sight.pos[0]) * push;
+	GLdouble vec_y = (balls[0].pos[1] - sight.pos[1]) * push;
+	GLdouble vec[] = { vec_x, vec_y, 0.0 };
+	balls[0].add_force(vec);
+}
+
+bool ObjectControl::ball_all_stop() {
+	for (size_t i = 0; i < _BALL_NUM; i++) {
+		if (balls[i].vec[0] != 0.0 || balls[i].vec[1] != 0.0 || balls[i].vec[2] != 0.0) {
+			return false;
+		}
+	}
+	return true;
 }
 

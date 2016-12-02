@@ -13,99 +13,8 @@
 #include <vector>
 #include <windows.h>
 #include <GL/glut.h>
+#include "constant_header.h"
 using namespace std;
-
-/* windows */
-const int _WINDOW_POSITION_X = 100;
-const int _WINDOW_POSITION_Y = 100;
-const int _WINDOW_WIDTH = 512;
-const int _WINDOW_HEIGHT = 512;
-const char _WINDOW_TITLE[] = "billiards";
-
-/* light */
-const GLfloat _LIGHT_POSITION_0[] = {0.0f, 0.0f, 150.0f, 1.0f};
-
-/* color */
-const GLfloat _RED[]   = { 0.8f, 0.2f, 0.2f, 1.0f };
-const GLfloat _GREEN[] = { 0.2f, 0.8f, 0.2f, 1.0f };
-const GLfloat _BLACK[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-/* material */
-struct _MATERIAL_STRUCT {							// material用構造体
-	GLfloat ambient[4];		// 環境反射
-	GLfloat diffuse[4];		// 拡散反射
-	GLfloat specular[4];	// 鏡面反射
-	GLfloat shininess;		// 光沢
-};
-const _MATERIAL_STRUCT _MS_WHITE_PLASTIC = {				//プラスチック(白)
-	{ 0.0f,  0.0f,  0.0f,  1.0f },
-	{ 0.55f, 0.55f, 0.55f, 1.0f },
-	{ 0.70f, 0.70f, 0.70f, 1.0f },
-	32.0f };
-const _MATERIAL_STRUCT _MS_RUBY = {						// ruby(ルビー)
-	{ 0.1745f,   0.01175f,  0.01175f,   1.0f },
-	{ 0.61424f,  0.04136f,  0.04136f,   1.0f },
-	{ 0.727811f, 0.626959f, 0.626959f,  1.0f },
-	76.8f };
-
-/* floor */
-const GLdouble _FLOOR_WIDTH = 100.0;
-const GLdouble _FLOOR_HEIGHT = 200.0;
-
-/* hole */
-const GLdouble _HOLE_SIZE = 12.0;
-
-/* wall */
-const GLdouble _WALL_SIZE = 10.0;
-const GLdouble _WALL_TOP_POS[] = { 0.0, _FLOOR_HEIGHT / 2 + _WALL_SIZE / 2,    0.0 };
-const GLdouble _WALL_BOTTOM_POS[] = { 0.0, -(_FLOOR_HEIGHT / 2 + _WALL_SIZE / 2), 0.0 };
-const GLdouble _WALL_LEFT_POS[] = { _FLOOR_WIDTH / 2 + _WALL_SIZE / 2,    0.0,  0.0 };
-const GLdouble _WALL_RIGHT_POS[] = { -(_FLOOR_WIDTH / 2 + _WALL_SIZE / 2), 0.0,  0.0 };
-
-/* bottom floor */
-const GLdouble _BOTTOM_FLOOR_POS[] = { 0.0, 0.0, -_WALL_SIZE * (3.0 / 4.0) };
-
-/* ball */
-const GLdouble _FRICTION = 0.995;
-const GLdouble _VEC_THRESHOLD = 0.1;
-const GLdouble _TIME_TO_VEC = 0.01;
-const GLdouble _BALL_RADIUS = 4.0;
-const GLdouble _BALL_DIAMOND_TOP = 10.0;
-const GLint _BALL_NUM = 10;
-
-const GLdouble _PLAYER_POS[]  = { 0.0,                     -_FLOOR_HEIGHT / 4,                   _BALL_RADIUS };
-const GLdouble _N1_POS[]      = { 0.0,                     _BALL_DIAMOND_TOP,                    _BALL_RADIUS };
-const GLdouble _N2_POS[]      = { -_BALL_RADIUS - 1.0,     _BALL_DIAMOND_TOP + 2 * _BALL_RADIUS, _BALL_RADIUS };
-const GLdouble _N3_POS[]      = { _BALL_RADIUS + 1.0,      _BALL_DIAMOND_TOP + 2 * _BALL_RADIUS, _BALL_RADIUS };
-const GLdouble _N4_POS[]      = { -_BALL_RADIUS * 2 - 1.0, _BALL_DIAMOND_TOP + 4 * _BALL_RADIUS, _BALL_RADIUS };
-const GLdouble _N5_POS[]      = { 0.0,                     _BALL_DIAMOND_TOP + 4 * _BALL_RADIUS, _BALL_RADIUS };
-const GLdouble _N6_POS[]      = { _BALL_RADIUS * 2 + 1.0,  _BALL_DIAMOND_TOP + 4 * _BALL_RADIUS, _BALL_RADIUS };
-const GLdouble _N7_POS[]      = { -_BALL_RADIUS - 1.0,     _BALL_DIAMOND_TOP + 6 * _BALL_RADIUS, _BALL_RADIUS };
-const GLdouble _N8_POS[]      = { _BALL_RADIUS + 1.0,      _BALL_DIAMOND_TOP + 6 * _BALL_RADIUS, _BALL_RADIUS };
-const GLdouble _N9_POS[]      = { 0.0,                     _BALL_DIAMOND_TOP + 8 * _BALL_RADIUS, _BALL_RADIUS };
-
-const GLdouble _PUSH_SPACE_LIMIT = 0.05;
-
-/* que */
-const GLdouble _QUE_RADIUS = 2.0;
-const GLdouble _QUE_HEIGHT = 80.0;
-const size_t _QUE_SIDES = 10;
-const GLdouble _QUE_PULL = _QUE_HEIGHT + 2.0;
-const GLdouble _QUE_POS_HEIGHT = 26.0;
-const GLdouble _QUE_ROTATE = 15.0;
-const GLdouble _QUE_ADD_PULL = 0.1;
-
-/* sight */
-const GLdouble _SIGHT_RADIUS = 300.0;
-const GLdouble _SIGHT_PLUS = 0.03; //radian
-const GLdouble _SIGHT_POS_Z = 200.0;
-const GLdouble _SIGHT_CENTER_POS_INIT[] = { 0.0, -_FLOOR_HEIGHT / 4, _BALL_RADIUS };
-const GLdouble _SIGHT_VEC[] = { 0.0, 0.0, 1.0 };
-
-/* keyborad */
-const int _KEY_SPACE = 040;
-const int _KEY_ESC   = 033;
-
 
 /* get array length */
 template
@@ -185,7 +94,9 @@ public:
 	Ball();
 	Ball(GLdouble pos[], _MATERIAL_STRUCT material);
 	~Ball();
-	void move();
+	void move_vec();
+	void move_pos(GLdouble add_pos[]);
+	void add_force(GLdouble add_vec[]);
 	void draw();
 };
 
@@ -219,6 +130,28 @@ public:
 	void draw(GLdouble player_ball[]);
 };
 
+class Collision {
+	bool in_hole;
+	GLdouble floor_height, floor_width;
+	GLdouble ball_radius;
+	GLdouble hole_size;
+public:
+	Collision();
+	~Collision();
+	bool floor_judge(GLdouble pos[]);
+	GLdouble *floor(Ball ball, GLdouble *vec);
+	bool hole_lrside_judge(GLdouble pos[]);
+	bool hole_tdside_judge(GLdouble pos[]);
+	GLdouble *hole(Ball ball, GLdouble *vec);
+	bool wall_lrside_judge(GLdouble pos_x);
+	bool wall_tdside_judge(GLdouble pos_y);
+	GLdouble *wall(Ball ball, GLdouble *vec);
+	bool ball_judge(GLdouble target_pos[], GLdouble opponent_pos[]);
+	GLdouble *ball_process(Ball target, Ball opponent, GLdouble *vec);
+	GLdouble *ball_not_collision_pos(Ball target, Ball opponent, GLdouble *pos);
+	GLdouble **ball(Ball target, Ball opponent, GLdouble **propaty);
+	bool bottom_floor(GLdouble pos[]);
+};
 
 class ObjectControl {
 	Ball balls[_BALL_NUM];
@@ -229,6 +162,8 @@ class ObjectControl {
 	Table table;
 	Sight sight;
 	Que que;
+	Collision collision;
+	bool ball_all_stop();
 public:
 	bool key_space, key_left, key_right;
 	ObjectControl();
@@ -237,4 +172,5 @@ public:
 	void draw();
 	void push_for_space(GLdouble time);
 };
+
 #endif

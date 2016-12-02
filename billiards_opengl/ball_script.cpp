@@ -15,13 +15,25 @@ Ball::Ball(GLdouble pos[], _MATERIAL_STRUCT material) {
 
 Ball::~Ball() {}
 
-void Ball::move() {
+void Ball::move_vec() {
 	for (size_t i = 0; i < array_length(vec); i++) {
 		vec[i] = vec[i] * friction;
 		if (abs(vec[i]) < vec_threshold) {	//Ž¸‘¬‚É‚æ‚é’âŽ~
 			vec[i] = 0.0;
 		}
 		pos[i] += vec[i];
+	}
+}
+
+void Ball::move_pos(GLdouble add_pos[]) {
+	for (size_t i = 0; i < array_length(pos); i++) {
+		pos[i] += add_pos[i];
+	}
+}
+
+void Ball::add_force(GLdouble add_vec[]) {
+	for (size_t i = 0; i < array_length(vec); i++) {
+		vec[i] += add_vec[i];
 	}
 }
 

@@ -151,6 +151,7 @@
   <ItemGroup>
     <ClCompile Include="ball_script.cpp" />
     <ClCompile Include="box_script.cpp" />
+    <ClCompile Include="collision_script.cpp" />
     <ClCompile Include="floor_script.cpp" />
     <ClCompile Include="que_script.cpp" />
     <ClCompile Include="sight_script.cpp" />
@@ -161,6 +162,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="billiards_header.h" />
+    <ClInclude Include="constant_header.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
