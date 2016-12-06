@@ -48,12 +48,21 @@
     <ClCompile Include="collision_script.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="billiards_header.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="constant_header.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="opencv.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="glext.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

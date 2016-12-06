@@ -1,5 +1,6 @@
 #include "billiards_header.h"
 
+/* 初期化 */
 Collision::Collision() {
 	floor_height = _FLOOR_HEIGHT;
 	floor_width = _FLOOR_WIDTH;
@@ -9,7 +10,9 @@ Collision::Collision() {
 
 Collision::~Collision() {}
 
+/* 床上判定 */
 bool Collision::floor_judge(GLdouble pos[]) {
+	//床を四角形二つと捉える
 	if (floor_height / 2 > abs(pos[1]) && floor_width / 2 - hole_size > abs(pos[0]) && ball_radius <= pos[2]) {
 		return true;
 	}
@@ -18,86 +21,83 @@ bool Collision::floor_judge(GLdouble pos[]) {
 	}
 	return false;
 }
-
 GLdouble *Collision::floor(Ball ball, GLdouble *vec) {
 	if (floor_judge(ball.pos)) {
-		vec[2] += -_GRAVITY;
+		vec[2] += -_GRAVITY; //半重力の加算
 		return vec;
 	}
 	return vec;
 }
 
-bool Collision::hole_lrside_judge(GLdouble pos[]) {
-	if (floor_width / 2 + ball_radius - hole_size > abs(pos[0])) {
+/* 穴内部判定 */
+bool Collision::hole_lrside_judge(GLdouble pos[]) { //左右壁
+	if (floor_width / 2 - hole_size > abs(pos[0])) {
 		return true;
 	}
 	return false;
 }
-
-bool Collision::hole_tdside_judge(GLdouble pos[]) {
-	if (floor_height / 2 + ball_radius - hole_size > abs(pos[1])) {
+bool Collision::hole_tdside_judge(GLdouble pos[]) { //上下壁
+	if (floor_height / 2 - hole_size > abs(pos[1])) {
 		return true;
 	}
 	return false;
 }
-
 GLdouble *Collision::hole(Ball ball, GLdouble *vec) {
 	for (size_t i = 0; i < 3; i++) {
 		vec[i] = 0.0;
 	}
 	if (in_hole) {
 		if (hole_lrside_judge(ball.pos)) {
-			vec[0] = -2.0 * ball.vec[0];
+			vec[0] = -2.0 * ball.vec[0]; //壁反射
 		}
 		if (hole_tdside_judge(ball.pos)) {
-			vec[1] = -2.0 * ball.vec[1];
+			vec[1] = -2.0 * ball.vec[1]; //壁反射
 		}
 	}
 	return vec;
 }
 
-bool Collision::wall_lrside_judge(GLdouble pos_x) {
+/* 壁判定 */
+bool Collision::wall_lrside_judge(GLdouble pos_x) { //左右壁
 	if (floor_width / 2 - ball_radius - 1.0 < abs(pos_x)) {
 		return true;
 	}
 	return false;
 }
-
-bool Collision::wall_tdside_judge(GLdouble pos_y) {
+bool Collision::wall_tdside_judge(GLdouble pos_y) { //上下壁
 	if (floor_height / 2 - ball_radius - 1.0 < abs(pos_y)) {
 		return true;
 	}
 	return false;
 }
-
 GLdouble *Collision::wall(Ball ball, GLdouble *vec) {
 	for (size_t i = 0; i < 3; i++) {
 		vec[i] = 0.0;
 	}
 	if (wall_lrside_judge(ball.pos[0])) {
-		vec[0] = -2.0 * ball.vec[0];
+		vec[0] = -2.0 * ball.vec[0]; //壁反射
 	}
 	if (wall_tdside_judge(ball.pos[1])) {
-		vec[1] = -2.0 * ball.vec[1];
+		vec[1] = -2.0 * ball.vec[1]; //壁反射
 	}
 
 	if (ball.vec[2] != 0.0 && (vec[0] != 0.0 || vec[1] != 0.0)) {
-		in_hole = true;
+		in_hole = true; //穴内部にボールが入り込んだ
 	}
 	return vec;
 }
 
+// 球同士判定
 bool Collision::ball_judge(GLdouble target_pos[], GLdouble opponent_pos[]) {
 	GLdouble distance = 0.0;
 	for (size_t i = 0; i < 3; i++) {
 		distance += abs(target_pos[i] - opponent_pos[i]);
 	}
 	if (distance <= 2 * ball_radius) {
-		return true;
+		return true; //距離と半径からコリジョン判定
 	}
 	return false;
 }
-
 GLdouble *Collision::ball_process(Ball target, Ball opponent, GLdouble *vec) {
 	for (size_t i = 0; i < 4; i++) {
 		vec[i] = 0.0;
@@ -127,8 +127,7 @@ GLdouble *Collision::ball_process(Ball target, Ball opponent, GLdouble *vec) {
 	vec[3] = after_opponent_vecy;
 	return vec;
 }
-
-GLdouble *Collision::ball_not_collision_pos(Ball target, Ball opponent, GLdouble *pos) {
+GLdouble *Collision::ball_not_collision_pos(Ball target, Ball opponent, GLdouble *pos) { //コリジョン解除
 	for (size_t i = 0; i < 3; i++) {
 		pos[i] = 0.0;
 	}
@@ -142,7 +141,6 @@ GLdouble *Collision::ball_not_collision_pos(Ball target, Ball opponent, GLdouble
 
 	return pos;
 }
-
 GLdouble **Collision::ball(Ball target, Ball opponent, GLdouble **propaty) {
 	for (size_t i = 0; i < 3; i++) {
 		propaty[0][i] = 0.0;
@@ -168,6 +166,7 @@ GLdouble **Collision::ball(Ball target, Ball opponent, GLdouble **propaty) {
 	return propaty;
 }
 
+/* 球消滅床判定 */
 bool Collision::bottom_floor(GLdouble pos[]) {
 	if (pos[2] < _BOTTOM_FLOOR_POS[2]) {
 		return true;

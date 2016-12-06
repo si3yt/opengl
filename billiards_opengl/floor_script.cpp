@@ -1,5 +1,6 @@
 #include "billiards_header.h"
 
+/* èâä˙âª */
 Floor::Floor() {
 	floor_init();
 }
@@ -12,8 +13,9 @@ void Floor::floor_init() {
 	color = const_cast<GLfloat*>(_GREEN);
 }
 
+/* ñ  */
 void Floor::set_face() {
-	GLint face_temp[3][4] = {						//è∞ñ 
+	GLint face_temp[3][4] = {
 		{ 0,  1,  6,  7 },
 		{ 2,  3,  4,  5 },
 		{ 10, 11, 8,  9 }
@@ -26,8 +28,9 @@ void Floor::set_face() {
 	}
 }
 
+/* í∏ì_ */
 void Floor::set_vertex() {
-	GLdouble vertex_temp[12][3] = {					//è∞í∏ì_
+	GLdouble vertex_temp[12][3] = {	
 		{  _FLOOR_WIDTH / 2 - _HOLE_SIZE,  _FLOOR_HEIGHT / 2,			   0.0 },
 		{ -_FLOOR_WIDTH / 2 + _HOLE_SIZE,  _FLOOR_HEIGHT / 2,			   0.0 },
 		{ -_FLOOR_WIDTH / 2 + _HOLE_SIZE,  _FLOOR_HEIGHT / 2 - _HOLE_SIZE, 0.0 },
@@ -48,6 +51,7 @@ void Floor::set_vertex() {
 		}
 	}
 }
+/* Ç±Ç±Ç‹Ç≈èâä˙âª */
 
 void Floor::draw() {
 	glPushMatrix();

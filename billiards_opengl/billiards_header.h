@@ -12,8 +12,11 @@
 #include <time.h>
 #include <vector>
 #include <windows.h>
+#include <GL/glew.h>
 #include <GL/glut.h>
+#include "glext.h"
 #include "constant_header.h"
+#include "opencv.h"
 using namespace std;
 
 /* get array length */
@@ -28,6 +31,7 @@ std::size_t array_length(const TYPE(&)[SIZE])
 }
 
 /* class */
+/* Timer class */
 class Timer {
 	double start;
 public:
@@ -37,6 +41,7 @@ public:
 	double elapsed(); //seconds
 };
 
+/* Box class */
 class Box {
 	GLint face[6][4];
 	GLdouble normal[6][3];
@@ -52,7 +57,7 @@ public:
 	void draw();
 };
 
-
+/* Floor class */
 class Floor {
 	GLint face[3][4];
 	GLdouble vertex[12][3];
@@ -66,7 +71,7 @@ public:
 	void draw();
 };
 
-
+/* Tbale class */
 class Table {
 	struct box_propaty {
 		GLdouble height, width, depth;
@@ -82,11 +87,13 @@ public:
 	void draw();
 };
 
+/* Ball(Sphere) class */
 class Ball {
-	GLdouble friction;
+	GLdouble friction, in_hole_vec;
 	GLdouble vec_threshold;
 	GLdouble pos_adjustment;
 	GLdouble radius;
+	void draw_material();
 public:
 	GLdouble pos[3];
 	GLdouble vec[3];
@@ -95,11 +102,13 @@ public:
 	Ball(GLdouble pos[], _MATERIAL_STRUCT material);
 	~Ball();
 	void move_vec();
+	void hole_move_vec();
 	void move_pos(GLdouble add_pos[]);
 	void add_force(GLdouble add_vec[]);
-	void draw();
+	void draw(GLuint tex_id);
 };
 
+/* Sight(Camera) class */
 class Sight {
 	GLdouble center_pos[3];
 	GLdouble vec[3];
@@ -116,6 +125,7 @@ public:
 	GLdouble get_angle();
 };
 
+/* Que(Cylinder) class */
 class Que {
 	GLdouble radius, height;
 	size_t sides;
@@ -130,6 +140,7 @@ public:
 	void draw(GLdouble player_ball[]);
 };
 
+/* Collision class */
 class Collision {
 	bool in_hole;
 	GLdouble floor_height, floor_width;
@@ -153,6 +164,16 @@ public:
 	bool bottom_floor(GLdouble pos[]);
 };
 
+class Texture {
+public:
+	Texture();
+	~Texture();
+	GLuint create_texture(GLuint tex_id, char *texture);
+};
+
+
+
+/* ObjectControl class (manager) */
 class ObjectControl {
 	Ball balls[_BALL_NUM];
 	struct ball_propaty {
@@ -164,6 +185,9 @@ class ObjectControl {
 	Que que;
 	Collision collision;
 	bool ball_all_stop();
+	void draw_ball();
+	Texture texture;
+	GLuint tex_id[_BALL_NUM];
 public:
 	bool key_space, key_left, key_right;
 	ObjectControl();
@@ -171,6 +195,7 @@ public:
 	void set_ball();
 	void draw();
 	void push_for_space(GLdouble time);
+	void texture_init();
 };
 
 #endif

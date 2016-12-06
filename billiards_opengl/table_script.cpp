@@ -1,5 +1,6 @@
 #include "billiards_header.h"
 
+/* ‰Šú‰» */
 Table::Table() {
 	table_init();
 }
@@ -44,6 +45,7 @@ void Table::table_init() {
 		table_parts[i] = box;
 	}
 }
+/* ‚±‚±‚Ü‚Å‰Šú‰» */
 
 void Table::draw() {
 	glDisable(GL_LIGHTING);

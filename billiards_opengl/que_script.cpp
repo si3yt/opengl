@@ -1,5 +1,6 @@
 #include "billiards_header.h"
 
+/* èâä˙âª */
 Que::Que() {
 	radius = _QUE_RADIUS;
 	height = _QUE_HEIGHT;
@@ -9,6 +10,7 @@ Que::Que() {
 
 Que::~Que() {}
 
+/* â~ñ  */
 void Que::draw_top() {
 	glNormal3d(0.0, 1.0, 0.0);
 	glBegin(GL_POLYGON);
@@ -18,7 +20,6 @@ void Que::draw_top() {
 	}
 	glEnd();
 }
-
 void Que::draw_bottom() {
 	glNormal3d(0.0, -1.0, 0.0);
 	glBegin(GL_POLYGON);
@@ -29,6 +30,7 @@ void Que::draw_bottom() {
 	glEnd();
 }
 
+/* ë§ñ  */
 void Que::draw_side() {
 	glBegin(GL_QUAD_STRIP);
 	for (size_t i = 0; i <= sides; i++) {

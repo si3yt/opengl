@@ -2,6 +2,7 @@
 
 Box::Box() {}
 
+/* èâä˙âª */
 Box::Box(GLdouble width, GLdouble height, GLdouble depth, GLdouble center[], GLfloat color[]) {
 	set_face();
 	set_normal();
@@ -11,6 +12,7 @@ Box::Box(GLdouble width, GLdouble height, GLdouble depth, GLdouble center[], GLf
 
 Box::~Box() {}
 
+/* í∏ì_ç¿ïW */
 void Box::set_vertex(GLdouble width, GLdouble height, GLdouble depth, GLdouble center[]) {
 	for (size_t i = 0; i < 8; i++) {
 		if (i==0 || i==3 || i==4 || i==7) {
@@ -31,6 +33,7 @@ void Box::set_vertex(GLdouble width, GLdouble height, GLdouble depth, GLdouble c
 	}
 }
 
+/* ñ  */
 void Box::set_face() {
 	GLint face_temp[6][4] = {
 		{ 0, 1, 2, 3 },
@@ -48,6 +51,7 @@ void Box::set_face() {
 	}
 }
 
+/* ñ@ê¸ */
 void Box::set_normal() {
 	GLdouble normal_temp[6][3] = {
 		{  0.0,  0.0, -1.0 },
@@ -64,6 +68,7 @@ void Box::set_normal() {
 		}
 	}
 }
+/* Ç±Ç±Ç‹Ç≈èâä˙âª */
 
 void Box::draw() {
 	glPushMatrix();

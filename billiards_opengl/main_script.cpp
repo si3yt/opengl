@@ -84,6 +84,7 @@ void initialize(void) {
 	glEnable(GL_DEPTH_TEST);			//デプスバッファを使用：glutInitDisplayMode() で GLUT_DEPTH を指定する
 	glDepthFunc(GL_LEQUAL);				//深度バッファと新しいピクセル地の深度の比較関数(GL_LEQUAL：格納深度以下であれば通過)
 	glClearDepth(1.0);
+	glDisable(GL_CULL_FACE);
 
 	/*
 	FindPlane(floor_planar,				//ステンシルを張るための床を見つける
@@ -110,6 +111,9 @@ void initialize(void) {
 
 	/* 平面射影行列の算出 */
 	//ShadowMatrix(pM, floor_planar,light_pos_0);
+
+	object.texture_init();
+
 }
 
 //----------------------------------------------------
