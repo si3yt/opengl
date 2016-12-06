@@ -23,10 +23,6 @@ GLuint Texture::create_texture(GLuint tex_id, char *texture) {
 	/* テクスチャ環境 */
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-	/* スフィアマッピング用のテクスチャ座標を生成する */
-	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
-	glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
-
 	/* アルファテストの判別関数 */
 	glAlphaFunc(GL_GREATER, 0.5);
 

@@ -11,8 +11,16 @@ Ball::Ball(GLdouble pos[], _MATERIAL_STRUCT material) {
 	for (size_t i = 0; i < array_length(this->pos); i++) {
 		this->pos[i] = pos[i];
 		vec[i] = 0.0;
+		rotation[i] = 0.0;
+		if (i == 1) rotation[i] = 45.0;
 	}
 	this->material = material;
+
+	/* sphere texture 設定 */
+	_sphere = gluNewQuadric();
+	gluQuadricDrawStyle(_sphere, GLU_FILL);
+	gluQuadricNormals(_sphere, GLU_SMOOTH);
+	gluQuadricTexture(_sphere, GL_TRUE);
 }
 
 Ball::~Ball() {}
@@ -65,35 +73,29 @@ void Ball::draw_material() {
 	glPopMatrix();
 }
 
+void Ball::vec_rotation() {
+	for (size_t i = 0; i < 2; i++) {
+		rotation[i] += vec[i] * _VEC_ROTAT_ADJUST;
+	}
+	glRotated(rotation[0], 0.0, 1.0, 0.0);
+	glRotated(rotation[1], -1.0, 0.0, 0.0);
+}
+
 void Ball::draw(GLuint tex_id) {
 	glPushMatrix();
-	/* 材質の設定 */
+
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, _WHITE);
-
-	/* アルファテスト開始 */
 	glEnable(GL_ALPHA_TEST);
-
-	/* テクスチャマッピング開始 */
 	glEnable(GL_TEXTURE_2D);
 
 	glBindTexture(GL_TEXTURE_2D, tex_id);
 
-	/* テクスチャ座標の自動生成を有効にする */
-	glEnable(GL_TEXTURE_GEN_S);
-	glEnable(GL_TEXTURE_GEN_T);
+	glTranslated(pos[0], pos[1], pos[2]);
+	vec_rotation();
+	gluSphere(_sphere, radius, 20, 20);	
 
-	/* 球を描く */
-	glTranslated(pos[0], pos[1], pos[2]);	    //平行移動値の設定
-	glutSolidSphere(radius, 20, 20);	//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
-
-	/* テクスチャ座標の自動生成を無効にする */
-	glDisable(GL_TEXTURE_GEN_S);
-	glDisable(GL_TEXTURE_GEN_T);
-
-	/* テクスチャマッピング終了 */
 	glDisable(GL_TEXTURE_2D);
-
-	/* アルファテスト終了 */
 	glDisable(GL_ALPHA_TEST);
+
 	glPopMatrix();
 }

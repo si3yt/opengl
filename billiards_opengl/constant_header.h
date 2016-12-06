@@ -62,6 +62,7 @@ static const GLint    _BALL_NUM         = 10;
 static const GLdouble _PUSH_SPACE_LIMIT = 0.03;
 static const GLdouble _GRAVITY          = -0.02;
 static const GLdouble _COLLISION_PUSH   = 0.5;
+static const GLdouble _VEC_ROTAT_ADJUST = 20.0;
 
 static const GLdouble _BALL_POS[][3] = {
 	{ 0.0,                     -_FLOOR_HEIGHT / 4,                   _BALL_RADIUS },

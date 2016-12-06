@@ -93,6 +93,8 @@ class Ball {
 	GLdouble vec_threshold;
 	GLdouble pos_adjustment;
 	GLdouble radius;
+	GLdouble rotation[3];
+	GLUquadricObj* _sphere;
 	void draw_material();
 public:
 	GLdouble pos[3];
@@ -105,6 +107,7 @@ public:
 	void hole_move_vec();
 	void move_pos(GLdouble add_pos[]);
 	void add_force(GLdouble add_vec[]);
+	void vec_rotation();
 	void draw(GLuint tex_id);
 };
 
