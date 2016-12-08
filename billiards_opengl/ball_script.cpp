@@ -11,8 +11,6 @@ Ball::Ball(GLdouble pos[], _MATERIAL_STRUCT material) {
 	for (size_t i = 0; i < array_length(this->pos); i++) {
 		this->pos[i] = pos[i];
 		vec[i] = 0.0;
-		rotation[i] = 0.0;
-		if (i == 1) rotation[i] = 45.0;
 	}
 	this->material = material;
 
@@ -74,11 +72,27 @@ void Ball::draw_material() {
 }
 
 void Ball::vec_rotation() {
+	GLdouble rotation = 0.0;
 	for (size_t i = 0; i < 2; i++) {
-		rotation[i] += vec[i] * _VEC_ROTAT_ADJUST;
+		rotation += abs(vec[i]) * _VEC_ROTAT_ADJUST;
+		if (rotation >= 360.0) rotation -= 360.0;
 	}
-	glRotated(rotation[0], 0.0, 1.0, 0.0);
-	glRotated(rotation[1], -1.0, 0.0, 0.0);
+	rotation *= M_PI / 180.0;
+
+	GLdouble angle = 0.0;
+	if (vec[0] != 0.0 && vec[1] != 0.0) angle = atan2(vec[1],vec[0]);
+	else if (vec[0] == 0.0 && vec[1] > 0.0) angle = M_PI / 2;
+	else if (vec[0] == 0.0 && vec[1] < 0.0) angle = -M_PI / 2;
+	else if (vec[1] == 0.0 && vec[0] > 0.0) angle = 0.0;
+	else if (vec[1] == 0.0 && vec[0] < 0.0) angle = M_PI;
+
+	GLdouble theta = rotation;
+	GLdouble quat_array[]{ cos(theta), -sin(angle)*sin(theta), cos(angle)*sin(theta), 0.0 };
+	quaternion.set_trans_quat(quat_array);
+	quaternion.qmul();
+	quaternion.qrot();
+	quaternion.save_init();
+	glMultMatrixd(quaternion.trans_mat);
 }
 
 void Ball::draw(GLuint tex_id) {

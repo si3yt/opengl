@@ -41,6 +41,20 @@ public:
 	double elapsed(); //seconds
 };
 
+class Quaternion {
+	GLdouble init_value[4];
+	GLdouble quat[4];
+	GLdouble trans_quat[4];
+public:
+	GLdouble trans_mat[16];
+	Quaternion();
+	~Quaternion();
+	void qrot();
+	void qmul();
+	void set_trans_quat(GLdouble *trans);
+	void save_init();
+};
+
 /* Box class */
 class Box {
 	GLint face[6][4];
@@ -93,8 +107,8 @@ class Ball {
 	GLdouble vec_threshold;
 	GLdouble pos_adjustment;
 	GLdouble radius;
-	GLdouble rotation[3];
 	GLUquadricObj* _sphere;
+	Quaternion quaternion;
 	void draw_material();
 public:
 	GLdouble pos[3];
