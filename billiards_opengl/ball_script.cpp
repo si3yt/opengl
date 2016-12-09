@@ -60,17 +60,6 @@ void Ball::add_force(GLdouble add_vec[]) {
 	}
 }
 
-void Ball::draw_material() {
-	glPushMatrix();
-	glMaterialfv(GL_FRONT, GL_AMBIENT, material.ambient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, material.diffuse);
-	glMaterialfv(GL_FRONT, GL_SPECULAR,material.specular);
-	glMaterialfv(GL_FRONT, GL_SHININESS, &material.shininess);
-	glTranslated(pos[0], pos[1], pos[2]);	    //•½sˆÚ“®’l‚Ìİ’è
-	glutSolidSphere(radius, 20, 20);	//ˆø”F(”¼Œa, Z²‚Ü‚í‚è‚Ì•ªŠ„”, Z²‚É‰ˆ‚Á‚½•ªŠ„”)
-	glPopMatrix();
-}
-
 void Ball::vec_rotation() {
 	GLdouble rotation = 0.0;
 	for (size_t i = 0; i < 2; i++) {
@@ -89,8 +78,8 @@ void Ball::vec_rotation() {
 	GLdouble theta = rotation;
 	GLdouble quat_array[]{ cos(theta), -sin(angle)*sin(theta), cos(angle)*sin(theta), 0.0 };
 	quaternion.set_trans_quat(quat_array);
-	quaternion.qmul();
-	quaternion.qrot();
+	quaternion.integration();
+	quaternion.quat_transmat();
 	quaternion.save_init();
 	glMultMatrixd(quaternion.trans_mat);
 }

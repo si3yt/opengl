@@ -27,9 +27,6 @@
     <ClCompile Include="table_script.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="floor_script.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ball_script.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -10,9 +10,25 @@ Box::Box(GLdouble width, GLdouble height, GLdouble depth, GLdouble center[], GLf
 	this->color = color;
 }
 
+Box::Box(GLdouble **vertex, GLfloat color[]) {
+	set_face();
+	set_normal();
+	set_vertex(vertex);
+	this->color = color;
+}
+
+
 Box::~Box() {}
 
 /* í∏ì_ç¿ïW */
+void Box::set_vertex(GLdouble **vertex) {
+	for (size_t i = 0; i < 8; i++) {
+		for (size_t j = 0; j < 3; j++) {
+			this->vertex[i][j] = vertex[i][j];
+		}
+	}
+}
+
 void Box::set_vertex(GLdouble width, GLdouble height, GLdouble depth, GLdouble center[]) {
 	for (size_t i = 0; i < 8; i++) {
 		if (i==0 || i==3 || i==4 || i==7) {
@@ -73,8 +89,9 @@ void Box::set_normal() {
 void Box::draw() {
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glColor4fv(color);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, color);
 	for (size_t i = 0; i < 6; i++) {
+		glNormal3dv(normal[i]);
 		for (size_t j = 0; j < 4; j++) {
 			glVertex3dv(vertex[face[i][j]]);
 		}

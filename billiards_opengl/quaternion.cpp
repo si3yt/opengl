@@ -7,19 +7,19 @@ Quaternion::Quaternion() {
 		init_value[i] = 0.0;
 		quat[i] = 0.0;
 	}
-	qrot();
+	quat_transmat();
 }
 
 Quaternion::~Quaternion() {}
 
-void Quaternion::qmul() {
+void Quaternion::integration() {
 	quat[0] = trans_quat[0] * init_value[0] - trans_quat[1] * init_value[1] - trans_quat[2] * init_value[2] - trans_quat[3] * init_value[3];
 	quat[1] = trans_quat[0] * init_value[1] + trans_quat[1] * init_value[0] + trans_quat[2] * init_value[3] - trans_quat[3] * init_value[2];
 	quat[2] = trans_quat[0] * init_value[2] - trans_quat[1] * init_value[3] + trans_quat[2] * init_value[0] + trans_quat[3] * init_value[1];
 	quat[3] = trans_quat[0] * init_value[3] + trans_quat[1] * init_value[2] - trans_quat[2] * init_value[1] + trans_quat[3] * init_value[0];
 }
 
-void Quaternion::qrot() {
+void Quaternion::quat_transmat() {
 	double x2 = quat[1] * quat[1] * 2.0;
 	double y2 = quat[2] * quat[2] * 2.0;
 	double z2 = quat[3] * quat[3] * 2.0;

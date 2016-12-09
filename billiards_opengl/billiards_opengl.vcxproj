@@ -154,7 +154,6 @@
     <ClCompile Include="ball_script.cpp" />
     <ClCompile Include="box_script.cpp" />
     <ClCompile Include="collision_script.cpp" />
-    <ClCompile Include="floor_script.cpp" />
     <ClCompile Include="quaternion.cpp" />
     <ClCompile Include="que_script.cpp" />
     <ClCompile Include="sight_script.cpp" />

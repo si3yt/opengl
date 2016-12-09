@@ -86,12 +86,6 @@ void initialize(void) {
 	glClearDepth(1.0);
 	glDisable(GL_CULL_FACE);
 
-	/*
-	FindPlane(floor_planar,				//ステンシルを張るための床を見つける
-		_FLOOR_VER.v0,
-		_FLOOR_VER.v1,
-		_FLOOR_VER.v2);
-	*/
 	/* 光源の設定 */
 	glEnable(GL_LIGHTING);									//陰影ON
 	glEnable(GL_LIGHT0);									//光源0を利用
@@ -101,16 +95,6 @@ void initialize(void) {
 	list_number = glGenLists(1);
 	glNewList(list_number, GL_COMPILE);	//コンパイルのみ
 	glEndList();
-
-	/* ステンシルバッファクリア値の設定 */
-	//glClearStencil(0);
-	//glCullFace(GL_BACK);
-	//glEnable(GL_CULL_FACE);
-	//glEnable(GL_AUTO_NORMAL);
-	//glEnable(GL_NORMALIZE);
-
-	/* 平面射影行列の算出 */
-	//ShadowMatrix(pM, floor_planar,light_pos_0);
 
 	object.texture_init();
 
@@ -122,14 +106,21 @@ void initialize(void) {
 void keyboard(unsigned char key, int x, int y) {
 	switch (key) {
 	case _KEY_SPACE:
-		object.key_space = true;
-		space.restart();
+		if (object.ball_all_stop()) {
+			object.key_space = true;
+			space.restart();
+		}
 		break;
 	case _KEY_ESC:
 		exit(0);
 		break;
 	default:
 		break;
+	}
+	if (key == 'r') {
+		ObjectControl new_object;
+		object = new_object;
+		object.texture_init();
 	}
 }
 
@@ -139,8 +130,10 @@ void keyboard(unsigned char key, int x, int y) {
 void keyboardUp(unsigned char key, int x, int y) {
 	switch (key) {
 	case _KEY_SPACE:
-		object.key_space = false;
-		object.push_for_space(space.elapsed());
+		if (object.key_space) {
+			object.key_space = false;
+			object.push_for_space(space.elapsed());
+		}
 		break;
 	}
 }

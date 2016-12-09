@@ -49,8 +49,8 @@ public:
 	GLdouble trans_mat[16];
 	Quaternion();
 	~Quaternion();
-	void qrot();
-	void qmul();
+	void quat_transmat();
+	void integration();
 	void set_trans_quat(GLdouble *trans);
 	void save_init();
 };
@@ -65,23 +65,11 @@ public:
 	GLdouble vertex[8][3];
 	GLfloat *color;
 	Box();
+	Box(GLdouble **vertex, GLfloat color[]);
 	Box(GLdouble width, GLdouble height, GLdouble depth, GLdouble center[], GLfloat color[]);
 	~Box();
+	void set_vertex(GLdouble **vertex);
 	void set_vertex(GLdouble width, GLdouble height, GLdouble depth, GLdouble center[]);
-	void draw();
-};
-
-/* Floor class */
-class Floor {
-	GLint face[3][4];
-	GLdouble vertex[12][3];
-	GLfloat *color;
-	void floor_init();
-	void set_face();
-	void set_vertex();
-public:
-	Floor();
-	~Floor();
 	void draw();
 };
 
@@ -92,8 +80,11 @@ class Table {
 		GLdouble *center;
 		GLfloat  *color;
 	}box_propaty[5];
-	Box table_parts[5];
-	Floor table_floor;
+	struct trapezoid_propaty {
+		GLdouble *vertex[8];
+		GLfloat  *color;
+	}trapezoid_propaty[15];
+	Box table_parts[20];
 	void table_init();
 public:
 	Table();
@@ -109,7 +100,6 @@ class Ball {
 	GLdouble radius;
 	GLUquadricObj* _sphere;
 	Quaternion quaternion;
-	void draw_material();
 public:
 	GLdouble pos[3];
 	GLdouble vec[3];
@@ -159,7 +149,6 @@ public:
 
 /* Collision class */
 class Collision {
-	bool in_hole;
 	GLdouble floor_height, floor_width;
 	GLdouble ball_radius;
 	GLdouble hole_size;
@@ -170,6 +159,7 @@ public:
 	GLdouble *floor(Ball ball, GLdouble *vec);
 	bool hole_lrside_judge(GLdouble pos[]);
 	bool hole_tdside_judge(GLdouble pos[]);
+	bool hole_center_judge(GLdouble pos[]);
 	GLdouble *hole(Ball ball, GLdouble *vec);
 	bool wall_lrside_judge(GLdouble pos_x);
 	bool wall_tdside_judge(GLdouble pos_y);
@@ -181,14 +171,13 @@ public:
 	bool bottom_floor(GLdouble pos[]);
 };
 
+/* Texture class */
 class Texture {
 public:
 	Texture();
 	~Texture();
 	GLuint create_texture(GLuint tex_id, char *texture);
 };
-
-
 
 /* ObjectControl class (manager) */
 class ObjectControl {
@@ -201,16 +190,17 @@ class ObjectControl {
 	Sight sight;
 	Que que;
 	Collision collision;
-	bool ball_all_stop();
 	void draw_ball();
 	Texture texture;
 	GLuint tex_id[_BALL_NUM];
+	void print_str(char* str, GLint length);
 public:
 	bool key_space, key_left, key_right;
 	ObjectControl();
 	~ObjectControl();
 	void set_ball();
 	void draw();
+	bool ball_all_stop();
 	void push_for_space(GLdouble time);
 	void texture_init();
 };

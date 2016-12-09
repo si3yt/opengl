@@ -13,10 +13,11 @@ Collision::~Collision() {}
 /* 床上判定 */
 bool Collision::floor_judge(GLdouble pos[]) {
 	//床を四角形二つと捉える
-	if (floor_height / 2 > abs(pos[1]) && floor_width / 2 - hole_size > abs(pos[0]) && ball_radius <= pos[2]) {
+	if (floor_height / 2 > abs(pos[1]) && floor_width / 2 - hole_size + _BALL_RADIUS / 2 > abs(pos[0]) && ball_radius <= pos[2]) {
 		return true;
 	}
-	if (floor_height / 2 - hole_size > abs(pos[1]) && floor_width / 2 > abs(pos[0]) && ball_radius <= pos[2]) {
+	if (floor_height / 2 - hole_size + _BALL_RADIUS / 2 > abs(pos[1]) && floor_width / 2 > abs(pos[0]) && ball_radius <= pos[2]) {
+		if (floor_width / 2 - abs(pos[0]) + abs(pos[1]) <= hole_size - _BALL_RADIUS / 4) return false;
 		return true;
 	}
 	return false;
@@ -31,14 +32,22 @@ GLdouble *Collision::floor(Ball ball, GLdouble *vec) {
 
 /* 穴内部判定 */
 bool Collision::hole_lrside_judge(GLdouble pos[]) { //左右壁
-	if (floor_width / 2 - hole_size > abs(pos[0])) {
+	if (floor_width / 2 - hole_size + _BALL_RADIUS / 2 > abs(pos[0])) {
 		return true;
 	}
 	return false;
 }
 bool Collision::hole_tdside_judge(GLdouble pos[]) { //上下壁
-	if (floor_height / 2 - hole_size > abs(pos[1])) {
+	if (floor_height / 2 - hole_size + _BALL_RADIUS / 2 > abs(pos[1])) {
 		return true;
+	}
+	return false;
+}
+bool Collision::hole_center_judge(GLdouble pos[]) { //中央壁
+	if (abs(pos[1]) < hole_size * 2) {
+		if (floor_width / 2 - abs(pos[0]) + abs(pos[1]) > hole_size - _BALL_RADIUS / 4) {
+			return true;
+		}
 	}
 	return false;
 }
@@ -46,26 +55,28 @@ GLdouble *Collision::hole(Ball ball, GLdouble *vec) {
 	for (size_t i = 0; i < 3; i++) {
 		vec[i] = 0.0;
 	}
-	if (in_hole) {
-		if (hole_lrside_judge(ball.pos)) {
-			vec[0] = -2.0 * ball.vec[0]; //壁反射
-		}
-		if (hole_tdside_judge(ball.pos)) {
-			vec[1] = -2.0 * ball.vec[1]; //壁反射
-		}
+	if (hole_lrside_judge(ball.pos)) {
+		vec[0] = -2.0 * ball.vec[0]; //壁反射
+	}
+	if (hole_tdside_judge(ball.pos)) {
+		vec[1] = -2.0 * ball.vec[1]; //壁反射
+	}
+	if (hole_center_judge(ball.pos)) {
+		if (vec[0] >= vec[1]) vec[1] = ball.vec[0];
+		else vec[0] = ball.vec[1];
 	}
 	return vec;
 }
 
 /* 壁判定 */
 bool Collision::wall_lrside_judge(GLdouble pos_x) { //左右壁
-	if (floor_width / 2 - ball_radius - 1.0 < abs(pos_x)) {
+	if (floor_width / 2 - ball_radius < abs(pos_x)) {
 		return true;
 	}
 	return false;
 }
 bool Collision::wall_tdside_judge(GLdouble pos_y) { //上下壁
-	if (floor_height / 2 - ball_radius - 1.0 < abs(pos_y)) {
+	if (floor_height / 2 - ball_radius < abs(pos_y)) {
 		return true;
 	}
 	return false;
@@ -79,10 +90,6 @@ GLdouble *Collision::wall(Ball ball, GLdouble *vec) {
 	}
 	if (wall_tdside_judge(ball.pos[1])) {
 		vec[1] = -2.0 * ball.vec[1]; //壁反射
-	}
-
-	if (ball.vec[2] != 0.0 && (vec[0] != 0.0 || vec[1] != 0.0)) {
-		in_hole = true; //穴内部にボールが入り込んだ
 	}
 	return vec;
 }
