@@ -1,4 +1,4 @@
-#include "billiards_header.h"
+#include "billiards.h"
 
 Texture::Texture() {}
 Texture::~Texture() {}
@@ -12,18 +12,18 @@ GLuint Texture::create_texture(GLuint tex_id, char *texture) {
 
 	gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, img.size().width, img.size().height, GL_RGB, GL_UNSIGNED_BYTE, img.data);
 
-	/* テクスチャを拡大・縮小する方法の指定 */
+	/* texture scale setting */
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	/* テクスチャの繰り返し方法の指定 */
+	/* texture repetition setting */
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-	/* テクスチャ環境 */
+	/* texture environment */
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-	/* アルファテストの判別関数 */
+	/* alphatest discriminant function */
 	glAlphaFunc(GL_GREATER, 0.5);
 
 	img.release();

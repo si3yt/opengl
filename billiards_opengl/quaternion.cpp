@@ -1,4 +1,4 @@
-#include "billiards_header.h"
+#include "billiards.h"
 
 Quaternion::Quaternion() {
 	init_value[0] = 1.0;
@@ -20,15 +20,15 @@ void Quaternion::integration() {
 }
 
 void Quaternion::quat_transmat() {
-	double x2 = quat[1] * quat[1] * 2.0;
-	double y2 = quat[2] * quat[2] * 2.0;
-	double z2 = quat[3] * quat[3] * 2.0;
-	double xy = quat[1] * quat[2] * 2.0;
-	double yz = quat[2] * quat[3] * 2.0;
-	double zx = quat[3] * quat[1] * 2.0;
-	double xw = quat[1] * quat[0] * 2.0;
-	double yw = quat[2] * quat[0] * 2.0;
-	double zw = quat[3] * quat[0] * 2.0;
+	GLdouble x2 = quat[1] * quat[1] * 2.0;
+	GLdouble y2 = quat[2] * quat[2] * 2.0;
+	GLdouble z2 = quat[3] * quat[3] * 2.0;
+	GLdouble xy = quat[1] * quat[2] * 2.0;
+	GLdouble yz = quat[2] * quat[3] * 2.0;
+	GLdouble zx = quat[3] * quat[1] * 2.0;
+	GLdouble xw = quat[1] * quat[0] * 2.0;
+	GLdouble yw = quat[2] * quat[0] * 2.0;
+	GLdouble zw = quat[3] * quat[0] * 2.0;
 
 	trans_mat[0] = 1.0 - y2 - z2;
 	trans_mat[1] = xy + zw;

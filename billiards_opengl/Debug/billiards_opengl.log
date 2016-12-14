@@ -1,14 +1,2 @@
-﻿  object_control_script.cpp
-  main_script.cpp
-  ball_script.cpp
-  Generating Code...
-  Skipping... (no relevant changes detected)
-  timer_script.cpp
-  texture.cpp
-  table_script.cpp
-  sight_script.cpp
-  que_script.cpp
-  quaternion.cpp
-  collision_script.cpp
-  box_script.cpp
-  billiards_opengl.vcxproj -> C:\Users\170283u\Desktop\opengl\billiards_opengl\Debug\billiards_opengl.exe
+﻿  main.cpp
+  billiards_opengl.vcxproj -> C:\Users\170283u\Desktop\sample\opengl\billiards_opengl\Debug\billiards_opengl.exe

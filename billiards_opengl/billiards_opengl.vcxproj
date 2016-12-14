@@ -151,21 +151,21 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ball_script.cpp" />
-    <ClCompile Include="box_script.cpp" />
-    <ClCompile Include="collision_script.cpp" />
+    <ClCompile Include="ball.cpp" />
+    <ClCompile Include="box.cpp" />
+    <ClCompile Include="collision.cpp" />
     <ClCompile Include="quaternion.cpp" />
-    <ClCompile Include="que_script.cpp" />
-    <ClCompile Include="sight_script.cpp" />
-    <ClCompile Include="main_script.cpp" />
-    <ClCompile Include="object_control_script.cpp" />
-    <ClCompile Include="table_script.cpp" />
+    <ClCompile Include="que.cpp" />
+    <ClCompile Include="sight.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="object_control.cpp" />
+    <ClCompile Include="table.cpp" />
     <ClCompile Include="texture.cpp" />
-    <ClCompile Include="timer_script.cpp" />
+    <ClCompile Include="timer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="billiards_header.h" />
-    <ClInclude Include="constant_header.h" />
+    <ClInclude Include="billiards.h" />
+    <ClInclude Include="constant.h" />
     <ClInclude Include="glext.h" />
     <ClInclude Include="opencv.h" />
   </ItemGroup>
